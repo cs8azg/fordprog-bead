@@ -185,12 +185,17 @@ void for_instruction::execute() {
     }
 }
 
-void execute_commands(routine_context context, std::list<instruction*>* commands) {
+void execute_commands_in_new_context(routine_context context, std::list<instruction*>* commands) {
+    execution_context exec_context(&context, commands);
+    context_stack.push(&exec_context);
+    execute_commands(commands);
+    context_stack.pop();
+}
+
+void execute_commands(std::list<instruction*>* commands) {
     if(!commands) {
         return;
     }
-
-    context_stack.push(new execution_context(&context, commands));
 
     std::list<instruction*>::iterator it;
     for(it = commands->begin(); it != commands->end(); ++it) {

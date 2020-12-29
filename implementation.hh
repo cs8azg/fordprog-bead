@@ -280,6 +280,8 @@ void type_check_commands(std::list<instruction*>* commands, routine_context* con
 
 void generate_code_of_commands(std::ostream& out, std::list<instruction*>* commands);
 
+void execute_commands_in_new_context(routine_context context, std::list<instruction*>* commands);
+
 void execute_commands(std::list<instruction*>* commands);
 
 execution_context* current_context();
