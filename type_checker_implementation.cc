@@ -2,7 +2,7 @@
 #include <iostream>
 #include <sstream>
 
-std::map<std::string, function_declaration> function_table;
+std::map<std::string, function_declaration*> function_table;
 
 type number_expression::get_type(routine_context* _context) const {
     return natural;
@@ -10,13 +10,6 @@ type number_expression::get_type(routine_context* _context) const {
 
 type boolean_expression::get_type(routine_context* _context) const {
     return boolean;
-}
-
-void function_declaration::declare() {
-    if (function_table.count(name) > 0) {
-        error(line, std::string("Re-declared function: ") + name);
-    }
-    function_table[name] = *this;
 }
 
 type id_expression::get_type(routine_context* _context) const {
@@ -60,7 +53,7 @@ type ternary_expression::get_type(routine_context* _context) const {
     if (cond->get_type(_context) != boolean) {
         error(line, std::string("Condition expression of ternary is not boolean."));
     }
-    if (exp_then->get_type(_context) != exp_else->get_type()) {
+    if (exp_then->get_type(_context) != exp_else->get_type(_context)) {
         error(line, std::string("Then and else expressions of ternary are of different types."));
     }
     return exp_then->get_type(_context); 
@@ -77,7 +70,7 @@ type function_call_expression::get_type(routine_context* _context) const {
     if (function_table.count(id) == 0) {
         error(line, std::string("Undefined function: ") + id);
     }
-    return function_table[id].return_type;
+    return function_table[id]->return_type;
 }
 
 void assign_instruction::type_check(routine_context* _context) {
@@ -122,15 +115,6 @@ void for_instruction::type_check(routine_context* _context) {
     type_check_commands(body, _context);
 }
 
-void type_check_commands(std::list<instruction*>* commands, routine_context* context) {
-    if(!commands) {
-        return;
-    }
-    for(std::list<instruction*>::iterator it = commands->begin(); it != commands->end(); ++it) {
-        (*it)->type_check(context);
-    }
-}
-
 routine_context::routine_context(std::list<instruction*>* _commands, std::list<symbol*>* _symbols)
     : commands(_commands)
 {
@@ -151,4 +135,20 @@ type routine_context::get_variable_type(int _line, std::string _name) {
         error(_line, std::string("Undefined variable: ") + _name);
     }
     return symbol_table[_name]->symbol_type;
+}
+
+void declare_function(function_declaration* function) {
+    if (function_table.count(function->name) > 0) {
+        error(function->line, std::string("Re-declared function: ") + function->name);
+    }
+    function_table[function->name] = function;
+}
+
+void type_check_commands(std::list<instruction*>* commands, routine_context* context) {
+    if(!commands) {
+        return;
+    }
+    for(std::list<instruction*>::iterator it = commands->begin(); it != commands->end(); ++it) {
+        (*it)->type_check(context);
+    }
 }

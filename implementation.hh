@@ -60,9 +60,8 @@ struct symbol {
 struct function_declaration {
     function_declaration() {}
     function_declaration(int _line, std::string _name, type _return_type, std::list<symbol*>* _parameter_symbols, std::list<symbol*>* _symbols, std::list<instruction*>* _commands);
-    void declare(); // TODO ?
-    std::string get_code(); // TODO ?
-    int line; // TODO ?
+    std::string get_code();
+    int line;
     std::string name;
     type return_type;
     std::string label;
@@ -71,14 +70,16 @@ struct function_declaration {
     std::list<instruction*>* commands;
 };
 
-extern std::map<std::string, function_declaration> function_table;
+extern std::map<std::string, function_declaration*> function_table;
 
 class id_expression : public expression {
   public:
     id_expression(int line, std::string _name);  
     type get_type(routine_context* _context) const;
     std::string get_code() const;
-    unsigned get_value() const;    
+    unsigned get_value() const;  
+    int get_line() const;  
+    std::string get_name() const;
   private:
     int line;
     std::string name;
@@ -263,6 +264,8 @@ class function_execution_context : public execution_context {
     void initialize_from_arguments();
       std::map<std::string, unsigned>* argument_value_table;
 };
+
+void declare_function(function_declaration* function);
 
 void type_check_commands(std::list<instruction*>* commands, routine_context* context);
 

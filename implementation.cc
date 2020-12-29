@@ -36,6 +36,14 @@ id_expression::id_expression(int _line, std::string _name)
     : line(_line), name(_name)
 {}
 
+int id_expression::get_line() const {
+    return line;
+}
+
+std::string id_expression::get_name() const {
+    return name;
+}
+
 binop_expression::~binop_expression() {
     delete left;
     delete right;

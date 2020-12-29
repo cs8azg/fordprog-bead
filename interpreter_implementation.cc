@@ -13,6 +13,12 @@ class execution_context {
             delete commands;
         }
         unsigned execute();
+        unsigned get_variable_value(const id_expression* _id_exp) {
+            if (symbol_table.count(_id_exp->get_name()) == 0) {
+                error(_id_exp->get_line(), std::string("Variable has not been initialized: ") + _id_exp->get_name());
+            }
+            return value_table->at(_id_exp->get_name());
+        }
     protected:
         std::map<std::string, symbol> symbol_table;
         std::map<std::string, unsigned>* value_table;
@@ -50,10 +56,7 @@ unsigned boolean_expression::get_value() const {
 }
 
 unsigned id_expression::get_value() const {
-    if(context_stack.top()->count(name) == 0) {
-        error(line, std::string("Variable has not been initialized: ") + name);
-    }
-    return value_table[name];
+    return context_stack.top()->get_variable_value(this);
 }
 
 unsigned binop_expression::get_value() const {
