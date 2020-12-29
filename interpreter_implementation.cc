@@ -20,14 +20,14 @@ class execution_context {
         std::list<instruction*>* commands;
 };
 
-class function_context : public execution_context {
+class function_execution_context : public execution_context {
     public:
-        function_context(std::list<std::string>* _symbols, std::list<instruction*>* _commands, std::map<std::string, unsigned>* _argument_value_table)
+        function_execution_context(std::list<std::string>* _symbols, std::list<instruction*>* _commands, std::map<std::string, unsigned>* _argument_value_table)
             : execution_context(_symbols, _commands), argument_value_table(_argument_value_table)
         {
             initialize_from_arguments();
         }
-        ~function_context() {
+        ~function_execution_context() {
             delete argument_value_table;
         }
     private:
@@ -40,8 +40,6 @@ class function_context : public execution_context {
 };
 
 std::stack<execution_context*> context_stack;
-
-// std::map<std::string, unsigned> value_table;
 
 unsigned number_expression::get_value() const {
     return value;

@@ -82,7 +82,7 @@ function_declaration:
         routine_context context($9, symbols);
 
         // Type check function
-        context.type_check_commands();
+        type_check_commands($9, &context);
 
         function_declaration(@1.begin.line, $3, $2, $5, $7, $9).declare();
     }

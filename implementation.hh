@@ -16,7 +16,7 @@ void error(int line, std::string text);
 
 class expression {
   public:
-    virtual type get_type() const = 0;
+    virtual type get_type(routine_context* _context) const = 0;
     virtual ~expression();
     virtual std::string get_code() const = 0;
     virtual unsigned get_value() const = 0;
@@ -25,7 +25,7 @@ class expression {
 class number_expression : public expression {
   public:
     number_expression(std::string text);  
-    type get_type() const;
+    type get_type(routine_context* _context) const;
     std::string get_code() const;
     unsigned get_value() const;    
   private:
@@ -35,7 +35,7 @@ class number_expression : public expression {
 class boolean_expression : public expression {
   public:
     boolean_expression(bool _value);  
-    type get_type() const;
+    type get_type(routine_context* _context) const;
     std::string get_code() const;
     unsigned get_value() const;    
   private:
@@ -49,7 +49,6 @@ extern std::string next_label();
 struct symbol {
     symbol() {}
     symbol(int _line, std::string _name, type _type);
-    void declare();
     std::string get_code();
     int get_size();
     int line;
@@ -57,8 +56,6 @@ struct symbol {
     type symbol_type;
     std::string label;
 };
-
-extern std::stack<execution_context*> context_stack;
 
 struct function_declaration {
     function_declaration() {}
@@ -79,7 +76,7 @@ extern std::map<std::string, function_declaration> function_table;
 class id_expression : public expression {
   public:
     id_expression(int line, std::string _name);  
-    type get_type() const;
+    type get_type(routine_context* _context) const;
     std::string get_code() const;
     unsigned get_value() const;    
   private:
@@ -91,7 +88,7 @@ class binop_expression : public expression {
   public:
     binop_expression(int _line, std::string _op, expression* _left, expression* _right);
     ~binop_expression();
-    type get_type() const;
+    type get_type(routine_context* _context) const;
     std::string get_code() const;
     unsigned get_value() const;    
   private:
@@ -105,7 +102,7 @@ class not_expression : public expression {
   public:
     not_expression(int _line, std::string _op, expression* _operand);
     ~not_expression();
-    type get_type() const;
+    type get_type(routine_context* _context) const;
     std::string get_code() const;
     unsigned get_value() const;    
   private:
@@ -118,7 +115,7 @@ class ternary_expression : public expression {
   public:
     ternary_expression(int _line, expression* _cond, expression* _exp_then, expression* _exp_else);
     ~ternary_expression();
-    type get_type() const;
+    type get_type(routine_context* _context) const;
     std::string get_code() const;
     unsigned get_value() const;
   private:
@@ -132,7 +129,7 @@ class function_call_expression : public expression {
   public:
     function_call_expression(int _line, std::string _id, std::list<expression*>* _parameters);
     ~function_call_expression();
-    type get_type() const;
+    type get_type(routine_context* _context) const;
     std::string get_code() const;
     unsigned get_value() const;
   private:
@@ -145,7 +142,7 @@ class instruction {
   public:
     instruction(int _line);
     virtual ~instruction();
-    virtual void type_check() = 0;
+    virtual void type_check(routine_context* _context) = 0;
     virtual std::string get_code() = 0;
     virtual void execute() = 0;
     int get_line();
@@ -157,7 +154,7 @@ class assign_instruction : public instruction {
   public:
     assign_instruction(int _line, std::string _left, expression* right);
     ~assign_instruction();
-    void type_check();
+    void type_check(routine_context* _context);
     std::string get_code();
     void execute();
   private:
@@ -168,7 +165,7 @@ class assign_instruction : public instruction {
 class read_instruction : public instruction {
   public:
     read_instruction(int _line, std::string _id);
-    void type_check();
+    void type_check(routine_context* _context);
     std::string get_code();
     void execute();
   private:
@@ -179,7 +176,7 @@ class write_instruction : public instruction {
   public:
     write_instruction(int _line, expression* _exp);
     ~write_instruction();
-    void type_check();
+    void type_check(routine_context* _context);
     std::string get_code();
     void execute();
   private:
@@ -191,7 +188,7 @@ class if_instruction : public instruction {
   public:
     if_instruction(int _line, expression* _condition, std::list<instruction*>* _true_branch, std::list<instruction*>* _false_branch);
     ~if_instruction();
-    void type_check();
+    void type_check(routine_context* _context);
     std::string get_code();
     void execute();
   private:
@@ -204,7 +201,7 @@ class while_instruction : public instruction {
   public:
     while_instruction(int _line, expression* _condition, std::list<instruction*>* _body);
     ~while_instruction();
-    void type_check();
+    void type_check(routine_context* _context);
     std::string get_code();
     void execute();
   private:
@@ -216,7 +213,7 @@ class for_instruction : public instruction {
   public:
     for_instruction(int _line, std::string _id, expression* _from, expression* _to, std::list<instruction*>* _body);
     ~for_instruction();
-    void type_check();
+    void type_check(routine_context* _context);
     std::string get_code();
     void execute();
   private:
@@ -230,11 +227,21 @@ class function_call_instruction : public instruction {
   public:
     function_call_instruction(int _line, function_call_expression* _expression);
     ~function_call_instruction();
-    void type_check();
+    void type_check(routine_context* _context);
     std::string get_code();
     void execute();
   private:
     function_call_expression* expression;
+};
+
+class routine_context {
+  public:
+    routine_context(std::list<instruction*>* _commands, std::list<symbol*>* _symbols);
+    type get_variable_type(int _line, std::string _name);
+  private:
+    void declare_variable(symbol* _symbol);
+    std::map<std::string, symbol*> symbol_table;
+    std::list<instruction*>* commands;
 };
 
 class execution_context {
@@ -257,7 +264,7 @@ class function_execution_context : public execution_context {
       std::map<std::string, unsigned>* argument_value_table;
 };
 
-void type_check_commands(std::list<instruction*>* commands);
+void type_check_commands(std::list<instruction*>* commands, routine_context* context);
 
 void generate_code_of_commands(std::ostream& out, std::list<instruction*>* commands);
 
