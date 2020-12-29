@@ -13,7 +13,7 @@ type boolean_expression::get_type(routine_context* _context) const {
 }
 
 void function_declaration::declare() {
-    if(function_table.count(name) > 0) {
+    if (function_table.count(name) > 0) {
         error(line, std::string("Re-declared function: ") + name);
     }
     function_table[name] = *this;
@@ -24,7 +24,7 @@ type id_expression::get_type(routine_context* _context) const {
 }
 
 type operand_type(std::string op) {
-    if(op == "+" || op == "-" || op == "*" || op == "/" || op == "%" ||
+    if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%" ||
        op == "<" || op == ">" || op == "<=" || op == ">=") {
            return natural;
     } else {
@@ -33,7 +33,7 @@ type operand_type(std::string op) {
 }
 
 type return_type(std::string op) {
-    if(op == "+" || op == "-" || op == "*" || op == "/" || op == "%") {
+    if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%") {
            return natural;
     } else {
         return boolean;
@@ -41,7 +41,7 @@ type return_type(std::string op) {
 }
 
 type binop_expression::get_type(routine_context* _context) const {
-    if(op == "=") {
+    if (op == "=") {
         if(left->get_type(_context) != right->get_type(_context)) {
             error(line, "Left and right operands of '=' have different types.");
         }
@@ -57,7 +57,7 @@ type binop_expression::get_type(routine_context* _context) const {
 }
 
 type ternary_expression::get_type(routine_context* _context) const {
-    if(cond->get_type(_context) != boolean) {
+    if (cond->get_type(_context) != boolean) {
         error(line, std::string("Condition expression of ternary is not boolean."));
     }
     if (exp_then->get_type(_context) != exp_else->get_type()) {
@@ -67,10 +67,17 @@ type ternary_expression::get_type(routine_context* _context) const {
 }
 
 type not_expression::get_type(routine_context* _context) const {
-    if(operand->get_type(_context) != boolean) {
+    if (operand->get_type(_context) != boolean) {
         error(line, "Operand of 'not' is not boolean.");
     }
     return boolean;
+}
+
+type function_call_expression::get_type(routine_context* _context) const {
+    if (function_table.count(id) == 0) {
+        error(line, std::string("Undefined function: ") + id);
+    }
+    return function_table[id].return_type;
 }
 
 void assign_instruction::type_check(routine_context* _context) {
