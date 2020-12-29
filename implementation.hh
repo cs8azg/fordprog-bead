@@ -158,6 +158,8 @@ class assign_instruction : public instruction {
     void type_check(routine_context* _context);
     std::string get_code();
     void execute();
+    std::string get_id();
+    unsigned get_value();
   private:
     std::string left;
     expression* right;
@@ -239,30 +241,37 @@ class routine_context {
   public:
     routine_context(std::list<instruction*>* _commands, std::list<symbol*>* _symbols);
     type get_variable_type(int _line, std::string _name);
+    std::map<std::string, symbol*>* get_symbol_table();
   private:
     void declare_variable(symbol* _symbol);
-    std::map<std::string, symbol*> symbol_table;
+    std::map<std::string, symbol*>* symbol_table;
     std::list<instruction*>* commands;
 };
 
 class execution_context {
-  public:
-    execution_context(std::list<symbol*>* _symbols, std::list<instruction*>* _commands);
-    ~execution_context();
-    unsigned execute();
-  protected:
-    std::map<std::string, unsigned>* value_table;
-  private:
-    std::list<instruction*>* commands;
+    public:
+        execution_context(routine_context* _routine_context, std::list<instruction*>* _commands);
+        ~execution_context();
+        unsigned execute();
+        unsigned get_variable_value(const id_expression* _id_exp) const;
+        unsigned get_variable_value(int _line, std::string _id) const;
+        type get_variable_type(std::string _id) const;
+        void set_variable_value(assign_instruction* _as_inst);
+        void set_variable_value(std::string _id, unsigned _value);
+    protected:
+        std::map<std::string, symbol*>* symbol_table;
+        std::map<std::string, unsigned>* value_table;
+    private:
+        std::list<instruction*>* commands;
 };
 
 class function_execution_context : public execution_context {
   public:
-    function_execution_context(std::list<symbol*>* _symbols, std::list<instruction*>* _commands, std::map<std::string, unsigned>* _argument_value_table);
+    function_execution_context(routine_context* _routine_context, std::list<instruction*>* _commands, std::map<std::string, unsigned>* _argument_value_table);
     ~function_execution_context();
   private:
     void initialize_from_arguments();
-      std::map<std::string, unsigned>* argument_value_table;
+    std::map<std::string, unsigned>* argument_value_table;
 };
 
 void declare_function(function_declaration* function);
@@ -272,6 +281,8 @@ void type_check_commands(std::list<instruction*>* commands, routine_context* con
 void generate_code_of_commands(std::ostream& out, std::list<instruction*>* commands);
 
 void execute_commands(std::list<instruction*>* commands);
+
+execution_context* current_context();
 
 void delete_commands(std::list<instruction*>* commands);
 

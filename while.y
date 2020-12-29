@@ -113,7 +113,7 @@ program:
         if (current_mode == compiler) {
             generate_code($5);
         } else {
-            execute_commands($5);
+            execute_commands(context, $5);
         }
         delete_commands($5);
     }

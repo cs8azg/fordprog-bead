@@ -1,49 +1,66 @@
 #include "implementation.hh"
 #include <sstream>
 #include <stack>
+#include <iostream>
 
-class execution_context {
-    public:
-        execution_context(std::list<std::string>* _symbols, std::list<instruction*>* _commands) {
-            value_table = new std::map<std::string, unsigned>();
-            commands = _commands;
-        }
-        ~execution_context() {
-            delete value_table;
-            delete commands;
-        }
-        unsigned execute();
-        unsigned get_variable_value(const id_expression* _id_exp) {
-            if (symbol_table.count(_id_exp->get_name()) == 0) {
-                error(_id_exp->get_line(), std::string("Variable has not been initialized: ") + _id_exp->get_name());
-            }
-            return value_table->at(_id_exp->get_name());
-        }
-    protected:
-        std::map<std::string, symbol> symbol_table;
-        std::map<std::string, unsigned>* value_table;
-    private:
-        std::list<instruction*>* commands;
-};
+// execution_context
+execution_context::execution_context(routine_context* _routine_context, std::list<instruction*>* _commands) {
+    symbol_table = _routine_context->get_symbol_table();
+    commands = _commands;
+    value_table = new std::map<std::string, unsigned>();
+}
 
-class function_execution_context : public execution_context {
-    public:
-        function_execution_context(std::list<std::string>* _symbols, std::list<instruction*>* _commands, std::map<std::string, unsigned>* _argument_value_table)
-            : execution_context(_symbols, _commands), argument_value_table(_argument_value_table)
-        {
-            initialize_from_arguments();
-        }
-        ~function_execution_context() {
-            delete argument_value_table;
-        }
-    private:
-        void initialize_from_arguments() {
-            for (std::map<std::string, unsigned>::iterator it = argument_value_table->begin(); it != argument_value_table->end(); ++it) {
-                value_table->insert(*it);
-            }
-        }
-        std::map<std::string, unsigned>* argument_value_table;
-};
+execution_context::~execution_context() {
+    delete value_table;
+    delete commands;
+}
+
+unsigned execution_context::execute() {
+    // TODO
+}
+
+unsigned execution_context::get_variable_value(const id_expression* _id_exp) const {
+    if (symbol_table->count(_id_exp->get_name()) == 0) {
+        error(_id_exp->get_line(), std::string("Variable has not been initialized: ") + _id_exp->get_name());
+    }
+    return value_table->at(_id_exp->get_name());
+}
+
+unsigned execution_context::get_variable_value(int _line, std::string _id) const {
+    if (symbol_table->count(_id) == 0) {
+        error(_line, std::string("Variable has not been initialized: ") + _id);
+    }
+    return value_table->at(_id);
+}
+
+type execution_context::get_variable_type(std::string _id) const {
+    return symbol_table->at(_id)->symbol_type;
+}
+
+void execution_context::set_variable_value(assign_instruction* _as_inst) {
+    set_variable_value(_as_inst->get_id(), _as_inst->get_value());
+}
+
+void execution_context::set_variable_value(std::string _id, unsigned _value) {
+    value_table->insert_or_assign(_id, _value);
+}
+
+// function_execution_context
+function_execution_context::function_execution_context(routine_context* _routine_context, std::list<instruction*>* _commands, std::map<std::string, unsigned>* _argument_value_table)
+    : execution_context(_routine_context, _commands), argument_value_table(_argument_value_table)
+{
+    initialize_from_arguments();
+}
+
+function_execution_context::~function_execution_context() {
+    delete argument_value_table;
+}
+
+void function_execution_context::initialize_from_arguments() {
+    for (std::map<std::string, unsigned>::iterator it = argument_value_table->begin(); it != argument_value_table->end(); ++it) {
+        value_table->insert(*it);
+    }
+}
 
 std::stack<execution_context*> context_stack;
 
@@ -56,7 +73,7 @@ unsigned boolean_expression::get_value() const {
 }
 
 unsigned id_expression::get_value() const {
-    return context_stack.top()->get_variable_value(this);
+    return current_context()->get_variable_value(this);
 }
 
 unsigned binop_expression::get_value() const {
@@ -104,22 +121,30 @@ unsigned not_expression::get_value() const {
 }
 
 void assign_instruction::execute() {
-    value_table[left] = right->get_value();
+    current_context()->set_variable_value(this);
+}
+
+std::string assign_instruction::get_id() {
+    return left;
+}
+
+unsigned assign_instruction::get_value() {
+    return right->get_value();
 }
 
 void read_instruction::execute() {
     std::string input_line;
     getline(std::cin, input_line);
-    if(symbol_table[id].symbol_type == natural) {
+    if (current_context()->get_variable_type(id) == natural) {
         std::stringstream ss(input_line);
         unsigned input;
         ss >> input;
-        value_table[id] = input;
-    } else if(symbol_table[id].symbol_type == boolean) {
-        if(input_line == "true") {
-            value_table[id] = 1;
+        current_context()->set_variable_value(id, input);
+    } else if (current_context()->get_variable_type(id) == boolean) {
+        if (input_line == "true") {
+            current_context()->set_variable_value(id, 1);
         } else {
-            value_table[id] = 0;
+            current_context()->set_variable_value(id, 0);
         }
     }
 }
@@ -151,20 +176,28 @@ void while_instruction::execute() {
 }
 
 void for_instruction::execute() {
-    for(value_table[id] = from->get_value(); value_table[id] < to->get_value(); value_table[id]++) {
+    for(
+        current_context()->set_variable_value(id, from->get_value()); 
+        current_context()->get_variable_value(line, id) < to->get_value(); 
+        current_context()->set_variable_value(id, current_context()->get_variable_value(line, id) + 1)
+    ) {
     	execute_commands(body);
     }
 }
 
-void execute_commands(std::list<instruction*>* commands) {
+void execute_commands(routine_context context, std::list<instruction*>* commands) {
     if(!commands) {
         return;
     }
 
-    context_stack.push(new execution_context())
+    context_stack.push(new execution_context(&context, commands));
 
     std::list<instruction*>::iterator it;
     for(it = commands->begin(); it != commands->end(); ++it) {
         (*it)->execute();
     }
+}
+
+execution_context* current_context() {
+    return context_stack.top();
 }

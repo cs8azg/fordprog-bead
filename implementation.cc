@@ -29,6 +29,12 @@ symbol::symbol(int _line, std::string _name, type _type) : line(_line), name(_na
 
 function_declaration::function_declaration(int _line, std::string _name, type _return_type, std::list<symbol*>* _parameter_symbols, std::list<symbol*>* _symbols, std::list<instruction*>* _commands) 
     : line(_line), name(_name), return_type(_return_type), parameter_symbols(_parameter_symbols), symbols(_symbols), commands(_commands) {
+    std::map<std::string, bool> parameter_symbol_names;
+    for (std::list<symbol*>::iterator it = parameter_symbols->begin(); it != parameter_symbols->end(); ++it) {
+        if (parameter_symbol_names.count((*it)->name) > 0) {
+            error(line, std::string("Duplicate function parameter: ") + name);
+        }
+    }
     label = next_label();
 }
 
