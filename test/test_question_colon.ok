@@ -1,0 +1,4 @@
+program test_question_colon
+begin
+    write(((1<2)?0:1)+1)
+end
