@@ -1,0 +1,10 @@
+function natural five()
+begin
+  return 5
+end
+
+program test_function_call
+  boolean my_bool
+begin
+  my_bool := five()
+end

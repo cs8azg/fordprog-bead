@@ -15,7 +15,7 @@ clean:
 test: test_interpreter test_compiler test_lexical_errors test_syntax_errors test_semantic_errors
 
 .PHONY: test_interpreter
-test_interpreter: while exec_write_natural exec_write_boolean exec_read exec_arithmetic exec_logic exec_assignment exec_branching exec_looping exec_divisor
+test_interpreter: while exec_write_natural exec_write_boolean exec_read exec_arithmetic exec_logic exec_assignment exec_branching exec_looping exec_divisor exec_function_declaration exec_function_call
 
 .PHONY: test_compiler
 test_compiler: while comp_write_natural comp_write_boolean comp_read comp_arithmetic comp_logic comp_assignment comp_branching comp_looping comp_divisor
@@ -162,3 +162,13 @@ comp_divisor: test/test_divisor.ok test/test_divisor.out
 	gcc temp.o io.c -otemp
 	./temp < test/test_divisor.in > temp.out
 	diff temp.out test/test_divisor.out
+
+.PHONY: exec_function_declaration
+exec_function_declaration: test/test_function_declaration.ok test/test_function_declaration.out
+	./while -i test/test_function_declaration.ok > temp.out
+	diff temp.out test/test_function_declaration.out
+
+.PHONY: exec_function_call
+exec_function_call: test/test_function_call.ok test/test_function_call.out
+	./while -i test/test_function_call.ok > temp.out
+	diff temp.out test/test_function_call.out

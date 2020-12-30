@@ -38,6 +38,11 @@ begin
   endif
 end
 
+function natural ten()
+begin
+  return add(4, 6)
+end
+
 program test_function_call
   natural a
   natural b
@@ -58,4 +63,5 @@ begin
   write(is_between_5_and_10(12))
   write(to_boolean(5))
   write(to_boolean(0))
+  write(ten())
 end

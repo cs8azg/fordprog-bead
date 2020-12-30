@@ -1,0 +1,15 @@
+function natural ten()
+begin
+  return add(4, 6)
+end
+
+function natural add(natural a, natural b)
+  natural sum
+begin
+  sum := a + b
+  return sum
+end
+
+program test_function_call
+begin
+end
