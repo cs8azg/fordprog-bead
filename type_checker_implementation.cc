@@ -211,6 +211,7 @@ bool function_call_instruction::always_returns() {
 routine_context::routine_context(int _line, std::list<instruction*>* _commands, std::list<symbol*>* _symbols)
     : line(_line), commands(_commands)
 {
+    symbol_table = new std::map<std::string, symbol*>();
     for (std::list<symbol*>::iterator it = _symbols->begin(); it != _symbols->end(); ++it) {
         declare_variable(*it);
     }

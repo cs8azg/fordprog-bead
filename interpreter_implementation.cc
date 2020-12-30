@@ -165,9 +165,9 @@ execution_results read_instruction::execute() {
 }
 
 execution_results write_instruction::execute() {
-    if(exp_type == natural) {
+    if (exp_type == natural) {
         std::cout << exp->get_value() << std::endl;
-    } else if(exp_type == boolean) {
+    } else if (exp_type == boolean) {
         if(exp->get_value()) {
             std::cout << "true" << std::endl;
         } else {

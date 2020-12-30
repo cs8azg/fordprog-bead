@@ -143,6 +143,10 @@ std::string not_expression::get_code() const {
     return ss.str();
 }
 
+std::string function_call_expression::get_code() const {
+    return "";
+}
+
 std::string assign_instruction::get_code() {
     std::stringstream ss;
     ss << right->get_code();
@@ -242,6 +246,14 @@ std::string for_instruction::get_code() {
     // End of loop
     ss << end_label << ":" << std::endl;
     return ss.str();
+}
+
+std::string function_call_instruction::get_code() {
+    return "";
+}
+
+std::string return_instruction::get_code() {
+    return "";
 }
 
 void generate_code_of_commands(std::ostream& out, std::list<instruction*>* commands) {

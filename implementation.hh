@@ -151,7 +151,7 @@ class instruction {
     virtual void type_check(routine_context* _context) = 0;
     virtual std::string get_code() = 0;
     virtual execution_results execute() = 0;
-    virtual bool always_returns();
+    virtual bool always_returns() = 0;
     int get_line();
   protected:
     int line;

@@ -3,12 +3,13 @@
 %define api.value.type variant
 
 %code top {
-#include "implementation.hh"
-#include <list>
+    #include "implementation.hh"
+    #include <list>
+    #include <iostream>
 }
 
 %code provides {
-int yylex(yy::parser::semantic_type* yylval, yy::parser::location_type* yylloc);
+    int yylex(yy::parser::semantic_type* yylval, yy::parser::location_type* yylloc);
 }
 
 %token PRG
@@ -217,19 +218,6 @@ command:
     }
 ;
 
-arguments:
-    // empty
-    {
-        $$ = new std::list<expression*>();
-    }
-|
-    arguments COM expression
-    {
-        $1->push_back($3);
-        $$ = $1;
-    }
-;
-
 expression:
     NUM
     {
@@ -335,7 +323,21 @@ expression:
 function_expression:
     ID OP arguments CL
     {  
+        std::cout << "Function call expression: " << $1 << std::endl;
         $$ = new function_call_expression(@1.begin.line, $1, $3);
+    }
+;
+
+arguments:
+    // empty
+    {
+        $$ = new std::list<expression*>();
+    }
+|
+    arguments COM expression
+    {
+        $1->push_back($3);
+        $$ = $1;
     }
 ;
 
