@@ -195,11 +195,6 @@ command:
 	    $$ = new for_instruction(@1.begin.line, $2, $4, $6, $8);
     }
 |
-    RET
-    {
-        $$ = new return_instruction(@1.begin.line);
-    }
-|
     RET expression
     {
         $$ = new return_instruction(@1.begin.line, $2);

@@ -229,7 +229,6 @@ class for_instruction : public instruction {
 
 class return_instruction : public instruction {
   public:
-    return_instruction(int _line);
     return_instruction(int _line, expression* _exp);
     ~return_instruction();
     void type_check(routine_context* _context);
@@ -247,7 +246,7 @@ class function_call_instruction : public instruction {
     std::string get_code();
     execution_results execute();
   private:
-    function_call_expression* expression;
+    function_call_expression* func_exp;
 };
 
 class routine_context {

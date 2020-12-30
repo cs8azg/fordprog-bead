@@ -138,7 +138,7 @@ void return_instruction::type_check(routine_context* _context) {
 }
 
 void function_call_instruction::type_check(routine_context* _context) {
-    expression->get_type(_context);
+    func_exp->get_type(_context);
 }
 
 routine_context::routine_context(std::list<instruction*>* _commands, std::list<symbol*>* _symbols)

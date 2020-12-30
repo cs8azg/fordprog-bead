@@ -165,20 +165,18 @@ for_instruction::~for_instruction() {
     delete_commands(body);
 }
 
-return_instruction::return_instruction(int _line) : instruction(_line) {}
-
-return_instruction::return_instruction(int _line, expression* _exp) : return_instruction(_line), exp(_exp) {}
+return_instruction::return_instruction(int _line, expression* _exp) : instruction(_line), exp(_exp) {}
 
 return_instruction::~return_instruction() {
     delete exp;
 }
 
-function_call_instruction::function_call_instruction(int _line, function_call_expression* _expression)
-    : instruction(_line), expression(_expression)
+function_call_instruction::function_call_instruction(int _line, function_call_expression* _func_exp)
+    : instruction(_line), func_exp(_func_exp)
 {}
 
 function_call_instruction::~function_call_instruction() {
-    delete expression;
+    delete func_exp;
 }
 
 void delete_commands(std::list<instruction*>* commands) {

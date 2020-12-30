@@ -222,14 +222,11 @@ execution_results for_instruction::execute() {
 }
 
 execution_results return_instruction::execute() {
-    if (exp != nullptr) {
-        return { true, exp->get_value() };
-    }
-    return { true, 0 };
+    return { true, exp->get_value() };
 }
 
 execution_results function_call_instruction::execute() {
-    expression->get_value();
+    func_exp->get_value();
     return { false, 0 };
 }
 
