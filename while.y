@@ -80,10 +80,13 @@ function_declaration:
         }
 
         // Create function context
-        routine_context context($9, symbols);
+        routine_context context($9, symbols, $2);
 
         // Type check function
         type_check_commands($9, &context);
+
+        // Check for return instruction on all branches of function
+        context.return_check();
 
         // Declare function
         declare_function(new function_declaration(@1.begin.line, $3, $2, $5, $7, $9));

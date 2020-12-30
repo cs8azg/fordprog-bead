@@ -147,6 +147,7 @@ class instruction {
     virtual void type_check(routine_context* _context) = 0;
     virtual std::string get_code() = 0;
     virtual execution_results execute() = 0;
+    virtual bool always_returns();
     int get_line();
   protected:
     int line;
@@ -159,6 +160,7 @@ class assign_instruction : public instruction {
     void type_check(routine_context* _context);
     std::string get_code();
     execution_results execute();
+    bool always_returns();
     std::string get_id();
     unsigned get_value();
   private:
@@ -172,6 +174,7 @@ class read_instruction : public instruction {
     void type_check(routine_context* _context);
     std::string get_code();
     execution_results execute();
+    bool always_returns();
   private:
     std::string id;
 };
@@ -183,6 +186,7 @@ class write_instruction : public instruction {
     void type_check(routine_context* _context);
     std::string get_code();
     execution_results execute();
+    bool always_returns();
   private:
     expression* exp;
     type exp_type;
@@ -195,7 +199,10 @@ class if_instruction : public instruction {
     void type_check(routine_context* _context);
     std::string get_code();
     execution_results execute();
+    bool always_returns();
   private:
+    bool true_branch_always_returns();
+    bool false_branch_always_returns();
     expression* condition;
     std::list<instruction*>* true_branch;
     std::list<instruction*>* false_branch;
@@ -208,6 +215,7 @@ class while_instruction : public instruction {
     void type_check(routine_context* _context);
     std::string get_code();
     execution_results execute();
+    bool always_returns();
   private:
     expression* condition;
     std::list<instruction*>* body;
@@ -220,6 +228,7 @@ class for_instruction : public instruction {
     void type_check(routine_context* _context);
     std::string get_code();
     execution_results execute();
+    bool always_returns();
   private:
     std::string id;
     expression* from;
@@ -234,6 +243,7 @@ class return_instruction : public instruction {
     void type_check(routine_context* _context);
     std::string get_code();
     execution_results execute();
+    bool always_returns();
   private:
     expression* exp;
 };
@@ -245,44 +255,47 @@ class function_call_instruction : public instruction {
     void type_check(routine_context* _context);
     std::string get_code();
     execution_results execute();
+    bool always_returns();
   private:
     function_call_expression* func_exp;
 };
 
 class routine_context {
   public:
-    routine_context(std::list<instruction*>* _commands, std::list<symbol*>* _symbols);
-    routine_context(std::list<instruction*>* _commands, std::list<symbol*>* _symbols, type _expected_return_type);
+    routine_context(int _line, std::list<instruction*>* _commands, std::list<symbol*>* _symbols);
+    routine_context(int _line, std::list<instruction*>* _commands, std::list<symbol*>* _symbols, type _expected_return_type);
     type get_variable_type(int _line, std::string _name);
     std::map<std::string, symbol*>* get_symbol_table();
+    std::list<instruction*>* get_commands();
     type get_expected_return_type();
+    void return_check();
   private:
     void declare_variable(symbol* _symbol);
+    int line;
     std::map<std::string, symbol*>* symbol_table;
     std::list<instruction*>* commands;
+    bool should_return_value;
     type expected_return_type;
 };
 
 class execution_context {
-    public:
-        execution_context(routine_context* _routine_context, std::list<instruction*>* _commands);
-        ~execution_context();
-        unsigned execute();
-        unsigned get_variable_value(const id_expression* _id_exp) const;
-        unsigned get_variable_value(int _line, std::string _id) const;
-        type get_variable_type(std::string _id) const;
-        void set_variable_value(assign_instruction* _as_inst);
-        void set_variable_value(std::string _id, unsigned _value);
-    protected:
-        std::map<std::string, symbol*>* symbol_table;
-        std::map<std::string, unsigned>* value_table;
-    private:
-        std::list<instruction*>* commands;
+  public:
+    execution_context(routine_context* _routine_context);
+    ~execution_context();
+    unsigned execute();
+    unsigned get_variable_value(const id_expression* _id_exp) const;
+    unsigned get_variable_value(int _line, std::string _id) const;
+    type get_variable_type(std::string _id) const;
+    void set_variable_value(assign_instruction* _as_inst);
+    void set_variable_value(std::string _id, unsigned _value);
+  protected:
+    routine_context* r_context;
+    std::map<std::string, unsigned>* value_table;
 };
 
 class function_execution_context : public execution_context {
   public:
-    function_execution_context(routine_context* _routine_context, std::list<instruction*>* _commands, std::map<std::string, unsigned>* _argument_value_table);
+    function_execution_context(routine_context* _routine_context, std::map<std::string, unsigned>* _argument_value_table);
     ~function_execution_context();
   private:
     void initialize_from_arguments();

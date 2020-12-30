@@ -4,9 +4,7 @@
 #include <iostream>
 
 // execution_context
-execution_context::execution_context(routine_context* _routine_context, std::list<instruction*>* _commands) {
-    symbol_table = _routine_context->get_symbol_table();
-    commands = _commands;
+execution_context::execution_context(routine_context* _routine_context) : r_context(_routine_context) {
     value_table = new std::map<std::string, unsigned>();
 }
 
@@ -16,7 +14,7 @@ execution_context::~execution_context() {
 
 unsigned execution_context::execute() {
     context_stack.push(this);
-    execute_commands(commands);
+    execute_commands(r_context->get_commands());
     context_stack.pop();
 }
 
@@ -35,7 +33,7 @@ unsigned execution_context::get_variable_value(int _line, std::string _id) const
 }
 
 type execution_context::get_variable_type(std::string _id) const {
-    return symbol_table->at(_id)->symbol_type;
+    return r_context->get_symbol_table()->at(_id)->symbol_type;
 }
 
 void execution_context::set_variable_value(assign_instruction* _as_inst) {
@@ -47,8 +45,8 @@ void execution_context::set_variable_value(std::string _id, unsigned _value) {
 }
 
 // function_execution_context
-function_execution_context::function_execution_context(routine_context* _routine_context, std::list<instruction*>* _commands, std::map<std::string, unsigned>* _argument_value_table)
-    : execution_context(_routine_context, _commands), argument_value_table(_argument_value_table)
+function_execution_context::function_execution_context(routine_context* _routine_context, std::map<std::string, unsigned>* _argument_value_table)
+    : execution_context(_routine_context), argument_value_table(_argument_value_table)
 {
     initialize_from_arguments();
 }
@@ -131,16 +129,8 @@ unsigned function_call_expression::get_value() const {
     ) {
         argument_value_table[(*par_it)->name] = (*arg_it)->get_value();
     }
-    function_execution_context exec_context(func_decl->r_context, func_decl->commands, &argument_value_table);
+    function_execution_context exec_context(func_decl->r_context, &argument_value_table);
     exec_context.execute();
-}
-
-bool instruction::had_return_instruction() {
-    return returned;
-}
-
-unsigned instruction::get_return_value() {
-    return return_value;
 }
 
 execution_results assign_instruction::execute() {

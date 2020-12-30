@@ -95,12 +95,24 @@ void assign_instruction::type_check(routine_context* _context) {
     }
 }
 
+bool assign_instruction::always_returns() {
+    return false;
+}
+
 void read_instruction::type_check(routine_context* _context) {
     _context->get_variable_type(line, id);
 }
 
+bool read_instruction::always_returns() {
+    return false;
+}
+
 void write_instruction::type_check(routine_context* _context) {
     exp_type = exp->get_type(_context);
+}
+
+bool write_instruction::always_returns() {
+    return false;
 }
 
 void if_instruction::type_check(routine_context* _context) {
@@ -111,11 +123,47 @@ void if_instruction::type_check(routine_context* _context) {
     type_check_commands(false_branch, _context);
 }
 
+bool if_instruction::always_returns() {
+    if (false_branch == nullptr) {
+        return false;
+    }
+    return true_branch_always_returns() && false_branch_always_returns();
+}
+
+bool if_instruction::true_branch_always_returns() {
+    for (std::list<instruction*>::iterator it = true_branch->begin(); it != true_branch->end(); ++it) {
+        if ((*it)->always_returns()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool if_instruction::false_branch_always_returns() {
+    for (std::list<instruction*>::iterator it = false_branch->begin(); it != false_branch->end(); ++it) {
+        if ((*it)->always_returns()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void while_instruction::type_check(routine_context* _context) {
     if(condition->get_type(_context) != boolean) {
         error(line, "Condition of 'while' instruction is not boolean.");
     }
     type_check_commands(body, _context);
+}
+
+bool while_instruction::always_returns() {
+    // This returns true only if the loop body returns on the first iteration, 
+    // it does not check changing conditions on branches that could return a value
+    for (std::list<instruction*>::iterator it = body->begin(); it != body->end(); ++it) {
+        if ((*it)->always_returns()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void for_instruction::type_check(routine_context* _context) {
@@ -131,30 +179,52 @@ void for_instruction::type_check(routine_context* _context) {
     type_check_commands(body, _context);
 }
 
+bool for_instruction::always_returns() {
+    // This returns true only if the loop body returns on the first iteration, 
+    // it does not check changing conditions on branches that could return a value
+    for (std::list<instruction*>::iterator it = body->begin(); it != body->end(); ++it) {
+        if ((*it)->always_returns()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void return_instruction::type_check(routine_context* _context) {
     if (exp->get_type(_context) != _context->get_expected_return_type()) {
         error(line, std::string("Return value has unexpected type"));
     }
 }
 
+bool return_instruction::always_returns() {
+    return true;
+}
+
 void function_call_instruction::type_check(routine_context* _context) {
     func_exp->get_type(_context);
 }
 
-routine_context::routine_context(std::list<instruction*>* _commands, std::list<symbol*>* _symbols)
-    : commands(_commands)
+bool function_call_instruction::always_returns() {
+    return false;
+}
+
+routine_context::routine_context(int _line, std::list<instruction*>* _commands, std::list<symbol*>* _symbols)
+    : line(_line), commands(_commands)
 {
     for(std::list<symbol*>::iterator it = _symbols->begin(); it != _symbols->end(); ++it) {
         declare_variable(*it);
     }
+    should_return_value = false;
 }
 
 routine_context::routine_context(
+    int _line, 
     std::list<instruction*>* _commands, 
     std::list<symbol*>* _symbols, 
     type _expected_return_type
-) : routine_context(_commands, _symbols) {
+) : routine_context(_line, _commands, _symbols) {
     expected_return_type = _expected_return_type;
+    should_return_value = true;
 }
 
 void routine_context::declare_variable(symbol* _symbol) {
@@ -175,8 +245,25 @@ std::map<std::string, symbol*>* routine_context::get_symbol_table() {
     return symbol_table;
 }
 
+std::list<instruction*>* routine_context::get_commands() {
+    return commands;
+}
+
 type routine_context::get_expected_return_type() {
     return expected_return_type;
+}
+
+void routine_context::return_check() {
+    if (!should_return_value) {
+        return;
+    }
+    bool always_returns = false;
+    for (std::list<instruction*>::iterator it = commands->begin(); it != commands->end(); ++it) {
+        if ((*it)->always_returns()) {
+            return;
+        }
+    }
+    error(line, std::string("Routine does not return value on all branches."));
 }
 
 void declare_function(function_declaration* function) {
