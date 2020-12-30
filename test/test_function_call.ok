@@ -1,3 +1,8 @@
+function natural five()
+begin
+  return 5
+end
+
 function natural add(natural a, natural b)
   natural sum
 begin
@@ -5,9 +10,23 @@ begin
   return sum
 end
 
-function natural five()
+function natural minus(natural a, natural b)
+  natural diff
 begin
-  return 5
+  if b > a then
+    diff := 42
+  else
+    diff := (a - b)
+  endif
+  return diff
+end
+
+function boolean is_between_5_and_10(natural a)
+begin
+  if a < 5 then
+    return false
+  endif
+  return a <= 10
 end
 
 program test_function_call
@@ -15,6 +34,7 @@ program test_function_call
   natural b
   natural sum
 begin
+  write(five())
   a := 2
   b := 7
   sum := add (a, b)
@@ -22,5 +42,8 @@ begin
   write(add(a, 5))
   write(add(2, 4))
   write(add(add(a, b), b))
-  write(five())
+  write(minus(b, a))
+  write(is_between_5_and_10(3))
+  write(is_between_5_and_10(7))
+  write(is_between_5_and_10(12))
 end
