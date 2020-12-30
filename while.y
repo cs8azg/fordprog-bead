@@ -95,13 +95,19 @@ function_declaration:
 
 parameter_declarations:
     // empty
+    {
+        $$ = new std::list<symbol*>();
+    }
 |
-    // declaration: paraméter deklaráció külön módon kéne történjen, hogy ne keveredjenek a változókkal
     parameter_declarations COM parameter_declaration
+    {
+        $1->push_back($3);
+        $$ = $1;
+    }
 ;
 
 parameter_declaration:
-    type ID { $$ = symbol(@1.begin.line, $2, $3); }
+    type ID { $$ = symbol(@1.begin.line, $2, $1); }
 ;
 
 program:
@@ -143,10 +149,7 @@ variable_declarations:
 ;
 
 variable_declaration:
-    type ID
-    { 
-        $$ = symbol(@1.begin.line, $2, $1);
-    }
+    type ID { $$ = symbol(@1.begin.line, $2, $1); }
 ;
 
 commands:
@@ -212,25 +215,13 @@ command:
 arguments:
     // empty
     {
-        $$ = new std::list<unsigned*>();
+        $$ = new std::list<expression*>();
     }
 |
     arguments COM expression
     {
-        $1->push_back($2);
+        $1->push_back($3);
         $$ = $1;
-    }
-;
-
-assignment:
-    ID ASN expression
-    {
-
-    }
-|
-    ID COL assignment COL expression
-    {
-
     }
 ;
 
