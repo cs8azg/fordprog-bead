@@ -211,7 +211,7 @@ bool function_call_instruction::always_returns() {
 routine_context::routine_context(int _line, std::list<instruction*>* _commands, std::list<symbol*>* _symbols)
     : line(_line), commands(_commands)
 {
-    for(std::list<symbol*>::iterator it = _symbols->begin(); it != _symbols->end(); ++it) {
+    for (std::list<symbol*>::iterator it = _symbols->begin(); it != _symbols->end(); ++it) {
         declare_variable(*it);
     }
     should_return_value = false;
@@ -221,8 +221,12 @@ routine_context::routine_context(
     int _line, 
     std::list<instruction*>* _commands, 
     std::list<symbol*>* _symbols, 
+    std::list<symbol*>* _parameters,
     type _expected_return_type
 ) : routine_context(_line, _commands, _symbols) {
+    for (std::list<symbol*>::iterator it = _parameters->begin(); it != _parameters->end(); ++it) {
+        declare_variable(*it);
+    }
     expected_return_type = _expected_return_type;
     should_return_value = true;
 }

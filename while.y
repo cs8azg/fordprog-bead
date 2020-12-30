@@ -48,11 +48,18 @@ int yylex(yy::parser::semantic_type* yylval, yy::parser::location_type* yylloc);
 %left MUL DIV MOD
 %precedence NOT
 
+%type <type> type
 %type <expression*> expression
 %type <instruction*> command
 %type <std::list<instruction*>* > commands
-%type <function*> function
-%type <std::list<function*>* > functions
+%type <symbol*> variable_declaration;
+%type <std::list<symbol*>* > variable_declarations;
+%type <symbol*> parameter_declaration;
+%type <std::list<symbol*>* > parameter_declarations;
+%type <function_declaration*> function_declaration
+%type <std::list<function_declaration*>* > function_declarations
+%type <function_call_expression*> function_expression
+%type <std::list<expression*>* > arguments
 
 %%
 
@@ -62,25 +69,23 @@ start:
 
 function_declarations:
     // empty
+    {
+        $$ = new std::list<function_declaration*>();
+    }
 |    
     function_declarations function_declaration
+    {
+        $$->push_back($2);
+        $$ = $1;
+    }
 ;
 
 function_declaration:
     // declarations: tudni kell, hogy milyen környezethez deklaráljuk a változókat
     FUN type ID OP parameter_declarations CL variable_declarations BEG commands END
     {
-        // Merge declarations
-        std::list<symbol*>* symbols = new std::list<symbol*>();
-        for (std::list<declaration*>::iterator it = $5->begin(); it != $5->end(); ++it) {
-            symbols->push_back(*it);
-        }
-        for (std::list<declaration*>::iterator it = $7->begin(); it != $7->end(); ++it) {
-            symbols->push_back(*it);
-        }
-
         // Create function context
-        routine_context context($9, symbols, $2);
+        routine_context context(@1.begin.line, $9, $7, $5, $2);
 
         // Type check function
         type_check_commands($9, &context);
@@ -107,23 +112,23 @@ parameter_declarations:
 ;
 
 parameter_declaration:
-    type ID { $$ = symbol(@1.begin.line, $2, $1); }
+    type ID { $$ = new symbol(@1.begin.line, $2, $1); }
 ;
 
 program:
-    PRG ID declarations BEG commands END
+    PRG ID variable_declarations BEG commands END
     {
         // Create main context
-        routine_context context($5, $3);
+        routine_context context(@1.begin.line, $5, $3);
 
 	    // Type check
-        context.type_check_commands($5);
+        type_check_commands($5, &context);
 
         // Handle commands
         if (current_mode == compiler) {
             generate_code($5);
         } else {
-            execute_commands(context, $5);
+            execution_context(&context).execute();
         }
         delete_commands($5);
     }
@@ -149,7 +154,7 @@ variable_declarations:
 ;
 
 variable_declaration:
-    type ID { $$ = symbol(@1.begin.line, $2, $1); }
+    type ID { $$ = new symbol(@1.begin.line, $2, $1); }
 ;
 
 commands:

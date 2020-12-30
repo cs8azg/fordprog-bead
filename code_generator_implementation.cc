@@ -43,10 +43,10 @@ std::string get_register(type t) {
 }
 
 std::string id_expression::get_code() const {
-    if(symbol_table.count(name) == 0) {
-        error(line, std::string("Undefined variable: ") + name);
-    }
-    return std::string("mov eax,[") + symbol_table[name].label + "]\n";
+    // if(symbol_table.count(name) == 0) {
+    //     error(line, std::string("Undefined variable: ") + name);
+    // }
+    // return std::string("mov eax,[") + symbol_table[name].label + "]\n";
 }
 
 std::string operator_code(std::string op) {
@@ -117,7 +117,7 @@ std::string binop_expression::get_code() const {
     ss << right->get_code();
     ss << "mov ecx,eax" << std::endl;
     ss << "pop eax" << std::endl;
-    ss << (op == "=" ? eq_code(left->get_type()) : operator_code(op));
+    // ss << (op == "=" ? eq_code(left->get_type()) : operator_code(op));
     return ss.str();
 }
 
@@ -146,7 +146,7 @@ std::string not_expression::get_code() const {
 std::string assign_instruction::get_code() {
     std::stringstream ss;
     ss << right->get_code();
-    ss << "mov [" + symbol_table[left].label + "]," << get_register(symbol_table[left].symbol_type) << std::endl;
+    // ss << "mov [" + symbol_table[left].label + "]," << get_register(symbol_table[left].symbol_type) << std::endl;
     return ss.str();
 }
 
@@ -159,10 +159,10 @@ std::string get_type_name(type t) {
 }
 
 std::string read_instruction::get_code() {
-    type t = symbol_table[id].symbol_type;
+    type t;// = symbol_table[id].symbol_type;
     std::stringstream ss;
     ss << "call read_" << get_type_name(t) << std::endl;
-    ss << "mov [" << symbol_table[id].label << "]," << get_register(t) << std::endl;
+    // ss << "mov [" << symbol_table[id].label << "]," << get_register(t) << std::endl;
     return ss.str();
 }
 
@@ -214,12 +214,12 @@ std::string for_instruction::get_code() {
 
     // Initializing iterator
     ss << from->get_code();
-    ss << "mov [" + symbol_table[id].label + "], eax" << std::endl;
+    // ss << "mov [" + symbol_table[id].label + "], eax" << std::endl;
 
     // Loop condition evaluation
     ss << begin_label << ":" << std::endl;
     // - Moving iterator and upper bound values to eax ecx registers
-    ss << "mov eax,[" << symbol_table[id].label << "]" << std::endl;
+    // ss << "mov eax,[" << symbol_table[id].label << "]" << std::endl;
     ss << "push eax" << std::endl;
     ss << to->get_code();
     ss << "mov ecx,eax" << std::endl;
@@ -233,9 +233,9 @@ std::string for_instruction::get_code() {
     // Body execution
     generate_code_of_commands(ss, body);
     // - Stepping iterator
-    ss << "mov eax,[" << symbol_table[id].label << "]" << std::endl;
+    // ss << "mov eax,[" << symbol_table[id].label << "]" << std::endl;
     ss << "inc eax" << std::endl;
-    ss << "mov [" + symbol_table[id].label + "]," << get_register(symbol_table[id].symbol_type) << std::endl;
+    // ss << "mov [" + symbol_table[id].label + "]," << get_register(symbol_table[id].symbol_type) << std::endl;
     // - Jumping to condition evaluation
     ss << "jmp " << begin_label << std::endl;
 
@@ -264,9 +264,9 @@ void generate_code(std::list<instruction*>* commands) {
     std::cout << std::endl;
     std::cout << "section .bss" << std::endl;
     std::map<std::string,symbol>::iterator it;
-    for(it = symbol_table.begin(); it != symbol_table.end(); ++it) {
-        std::cout << it->second.get_code();
-    }
+    // for(it = symbol_table.begin(); it != symbol_table.end(); ++it) {
+    //     std::cout << it->second.get_code();
+    // }
     std::cout << std::endl;
     std::cout << "section .text" << std::endl;
     std::cout << "main:" << std::endl;

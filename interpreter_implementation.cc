@@ -3,6 +3,8 @@
 #include <stack>
 #include <iostream>
 
+std::stack<execution_context*> context_stack;
+
 // execution_context
 execution_context::execution_context(routine_context* _routine_context) : r_context(_routine_context) {
     value_table = new std::map<std::string, unsigned>();
@@ -41,7 +43,7 @@ void execution_context::set_variable_value(assign_instruction* _as_inst) {
 }
 
 void execution_context::set_variable_value(std::string _id, unsigned _value) {
-    value_table->insert_or_assign(_id, _value);
+    (*value_table)[_id] = _value;
 }
 
 // function_execution_context
@@ -58,8 +60,6 @@ void function_execution_context::initialize_from_arguments() {
         value_table->insert(*it);
     }
 }
-
-std::stack<execution_context*> context_stack;
 
 unsigned number_expression::get_value() const {
     return value;
@@ -222,7 +222,7 @@ execution_results function_call_instruction::execute() {
 
 execution_results execute_commands(std::list<instruction*>* commands) {
     if(!commands) {
-        return;
+        return { false, 0 };
     }
 
     execution_results results;

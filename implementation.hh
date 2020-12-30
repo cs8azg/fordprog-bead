@@ -14,6 +14,10 @@ enum type {boolean, natural};
 
 void error(int line, std::string text);
 
+class routine_context;
+class instruction;
+struct execution_results;
+
 class expression {
   public:
     virtual type get_type(routine_context* _context) const = 0;
@@ -263,7 +267,7 @@ class function_call_instruction : public instruction {
 class routine_context {
   public:
     routine_context(int _line, std::list<instruction*>* _commands, std::list<symbol*>* _symbols);
-    routine_context(int _line, std::list<instruction*>* _commands, std::list<symbol*>* _symbols, type _expected_return_type);
+    routine_context(int _line, std::list<instruction*>* _commands, std::list<symbol*>* _symbols, std::list<symbol*>* _parameters, type _expected_return_type);
     type get_variable_type(int _line, std::string _name);
     std::map<std::string, symbol*>* get_symbol_table();
     std::list<instruction*>* get_commands();
