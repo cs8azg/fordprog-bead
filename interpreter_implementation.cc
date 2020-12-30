@@ -16,8 +16,9 @@ execution_context::~execution_context() {
 
 unsigned execution_context::execute() {
     context_stack.push(this);
-    execute_commands(r_context->get_commands());
+    execution_results results = execute_commands(r_context->get_commands());
     context_stack.pop();
+    return results.return_value;
 }
 
 unsigned execution_context::get_variable_value(const id_expression* _id_exp) const {
@@ -130,7 +131,7 @@ unsigned function_call_expression::get_value() const {
         argument_value_table[(*par_it)->name] = (*arg_it)->get_value();
     }
     function_execution_context exec_context(func_decl->r_context, &argument_value_table);
-    exec_context.execute();
+    return exec_context.execute();
 }
 
 execution_results assign_instruction::execute() {

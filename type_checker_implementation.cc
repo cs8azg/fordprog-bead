@@ -232,6 +232,10 @@ routine_context::routine_context(
     should_return_value = true;
 }
 
+routine_context::~routine_context() {
+    delete symbol_table;
+}
+
 void routine_context::declare_variable(symbol* _symbol) {
     if (symbol_table->count(_symbol->name) > 0) {
         error(_symbol->line, std::string("Re-declared variable: ") + _symbol->name);

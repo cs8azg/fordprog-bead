@@ -16,6 +16,7 @@
 %token BEG
 %token END
 %token FUN
+%token LOC
 %token RET
 %token BOO
 %token NAT
@@ -70,32 +71,26 @@ start:
 
 function_declarations:
     // empty
-    {
-        $$ = new std::list<function_declaration*>();
-    }
+    {}
 |    
     function_declarations function_declaration
-    {
-        $$->push_back($2);
-        $$ = $1;
-    }
+    {}
 ;
 
 function_declaration:
-    // declarations: tudni kell, hogy milyen környezethez deklaráljuk a változókat
-    FUN type ID OP parameter_declarations CL variable_declarations BEG commands END
+    FUN type ID parameter_declarations LOC variable_declarations BEG commands END
     {
         // Create function context
-        routine_context context(@1.begin.line, $9, $7, $5, $2);
+        routine_context context(@1.begin.line, $8, $6, $4, $2);
 
         // Type check function
-        type_check_commands($9, &context);
+        type_check_commands($8, &context);
 
         // Check for return instruction on all branches of function
         context.return_check();
 
         // Declare function
-        declare_function(new function_declaration(@1.begin.line, $3, $2, $5, $7, $9));
+        declare_function(new function_declaration(@1.begin.line, $3, $2, $4, $6, $8));
     }
 ;
 
@@ -105,9 +100,9 @@ parameter_declarations:
         $$ = new std::list<symbol*>();
     }
 |
-    parameter_declarations COM parameter_declaration
+    parameter_declarations parameter_declaration
     {
-        $1->push_back($3);
+        $1->push_back($2);
         $$ = $1;
     }
 ;
@@ -131,7 +126,6 @@ program:
         } else {
             execution_context(&context).execute();
         }
-        delete_commands($5);
     }
 ;
 
@@ -323,7 +317,6 @@ expression:
 function_expression:
     ID OP arguments CL
     {  
-        std::cout << "Function call expression: " << $1 << std::endl;
         $$ = new function_call_expression(@1.begin.line, $1, $3);
     }
 ;
@@ -332,6 +325,13 @@ arguments:
     // empty
     {
         $$ = new std::list<expression*>();
+    }
+|
+    expression
+    {
+        std::list<expression*> *args = new std::list<expression*>();
+        args->push_back($1);
+        $$ = args;
     }
 |
     arguments COM expression

@@ -16,6 +16,7 @@ program                     return parser::token::PRG;
 begin                       return parser::token::BEG;
 end                         return parser::token::END;
 function		                return parser::token::FUN;
+local                       return parser::token::LOC;
 return                      return parser::token::RET;
 boolean                     return parser::token::BOO;
 natural                     return parser::token::NAT;

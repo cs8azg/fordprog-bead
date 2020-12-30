@@ -1,0 +1,29 @@
+function five
+local
+begin
+  return 5
+end
+
+function natural add
+  natural a 
+  natural b
+local
+  natural sum
+begin
+  sum := a + b
+  return sum
+end
+
+function natural minus
+  natural a
+  natural b
+local
+  natural diff
+begin
+  diff := a - b
+  return diff
+end
+
+program test_function_declaration
+begin
+end

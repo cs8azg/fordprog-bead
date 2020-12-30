@@ -1,0 +1,30 @@
+function natural add
+  natural a
+  natural b
+local
+  natural sum
+begin
+  sum := a + b
+  return sum
+end
+
+function natural five
+local
+begin
+  return 5
+end
+
+program test_function_call
+  natural a
+  natural b
+  natural sum
+begin
+  a := 2
+  b := 7
+  sum := add ( a , b )
+  write(sum)
+  write(add(a, 5))
+  write(add(2, 4))
+  write(add(add(a, b), b))
+  write(five())
+end

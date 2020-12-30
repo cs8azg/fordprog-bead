@@ -268,6 +268,7 @@ class routine_context {
   public:
     routine_context(int _line, std::list<instruction*>* _commands, std::list<symbol*>* _symbols);
     routine_context(int _line, std::list<instruction*>* _commands, std::list<symbol*>* _symbols, std::list<symbol*>* _parameters, type _expected_return_type);
+    ~routine_context();
     type get_variable_type(int _line, std::string _name);
     std::map<std::string, symbol*>* get_symbol_table();
     std::list<instruction*>* get_commands();
