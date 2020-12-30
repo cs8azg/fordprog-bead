@@ -36,6 +36,13 @@ test_syntax_errors: test/*.syntax_error
 	! ./while -i test/08.syntax_error 2> /dev/null
 	! ./while -i test/09.syntax_error 2> /dev/null
 	! ./while -i test/10.syntax_error 2> /dev/null
+	! ./while -i test/11.syntax_error 2> /dev/null
+	! ./while -i test/12.syntax_error 2> /dev/null
+	! ./while -i test/13.syntax_error 2> /dev/null
+	! ./while -i test/14.syntax_error 2> /dev/null
+	! ./while -i test/18.syntax_error 2> /dev/null
+	! ./while -i test/19.syntax_error 2> /dev/null
+
 
 .PHONY: test_semantic_errors
 test_semantic_errors: test/01.semantic_error test/02.semantic_error test/03.semantic_error test/04.semantic_error test/05.semantic_error test/06.semantic_error 
@@ -45,6 +52,16 @@ test_semantic_errors: test/01.semantic_error test/02.semantic_error test/03.sema
 	! ./while -i test/04.semantic_error 2> /dev/null
 	! ./while -i test/05.semantic_error 2> /dev/null
 	! ./while -i test/06.semantic_error 2> /dev/null
+	! ./while -i test/07.semantic_error 2> /dev/null
+	! ./while -i test/08.semantic_error 2> /dev/null
+	! ./while -i test/15.semantic_error 2> /dev/null
+	! ./while -i test/16.semantic_error 2> /dev/null
+	! ./while -i test/17.semantic_error 2> /dev/null
+	! ./while -i test/20.semantic_error 2> /dev/null
+	! ./while -i test/21.semantic_error 2> /dev/null
+	! ./while -i test/22.semantic_error 2> /dev/null
+	! ./while -i test/23.semantic_error 2> /dev/null
+	! ./while -i test/24.semantic_error 2> /dev/null
 
 .PHONY: exec_write_natural
 exec_write_natural: test/test_write_natural.ok test/test_write_natural.out
