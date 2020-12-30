@@ -16,7 +16,6 @@
 %token BEG
 %token END
 %token FUN
-%token LOC
 %token RET
 %token BOO
 %token NAT
@@ -78,19 +77,19 @@ function_declarations:
 ;
 
 function_declaration:
-    FUN type ID parameter_declarations LOC variable_declarations BEG commands END
+    FUN type ID OP parameter_declarations CL variable_declarations BEG commands END
     {
         // Create function context
-        routine_context context(@1.begin.line, $8, $6, $4, $2);
+        routine_context context(@1.begin.line, $9, $7, $5, $2);
 
         // Type check function
-        type_check_commands($8, &context);
+        type_check_commands($9, &context);
 
         // Check for return instruction on all branches of function
         context.return_check();
 
         // Declare function
-        declare_function(new function_declaration(@1.begin.line, $3, $2, $4, $6, $8));
+        declare_function(new function_declaration(@1.begin.line, $3, $2, $5, $7, $9));
     }
 ;
 
@@ -100,9 +99,16 @@ parameter_declarations:
         $$ = new std::list<symbol*>();
     }
 |
-    parameter_declarations parameter_declaration
+    parameter_declaration
     {
-        $1->push_back($2);
+        std::list<symbol*> *params = new std::list<symbol*>();
+        params->push_back($1);
+        $$ = params;
+    }
+|
+    parameter_declarations COM parameter_declaration
+    {
+        $1->push_back($3);
         $$ = $1;
     }
 ;

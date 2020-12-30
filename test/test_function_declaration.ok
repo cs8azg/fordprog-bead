@@ -1,23 +1,16 @@
-function five
-local
+function natural five()
 begin
   return 5
 end
 
-function natural add
-  natural a 
-  natural b
-local
+function natural add(natural a, natural b)
   natural sum
 begin
   sum := a + b
   return sum
 end
 
-function natural minus
-  natural a
-  natural b
-local
+function natural minus(natural a, natural b)
   natural diff
 begin
   diff := a - b
