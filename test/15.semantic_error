@@ -1,0 +1,10 @@
+# no return instruction
+function natural five()
+  natural my_var
+begin
+  my_var := 5
+end
+
+program test_function_declaration
+begin
+end

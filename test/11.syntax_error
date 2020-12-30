@@ -1,0 +1,9 @@
+# no function return type
+function five()
+begin
+  return 5
+end
+
+program test_function_declaration
+begin
+end

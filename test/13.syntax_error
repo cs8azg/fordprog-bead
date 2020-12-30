@@ -1,0 +1,9 @@
+# no parantheses on function
+function natural five
+begin
+  return 5
+end
+
+program test_function_declaration
+begin
+end

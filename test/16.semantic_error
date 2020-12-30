@@ -1,0 +1,9 @@
+# invalid return type
+function natural five()
+begin
+  return true
+end
+
+program test_function_declaration
+begin
+end

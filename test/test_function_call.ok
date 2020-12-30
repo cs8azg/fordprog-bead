@@ -29,6 +29,15 @@ begin
   return a <= 10
 end
 
+function boolean to_boolean(natural number)
+begin
+  if number > 0 then
+    return true
+  else
+    return false
+  endif
+end
+
 program test_function_call
   natural a
   natural b
@@ -43,7 +52,10 @@ begin
   write(add(2, 4))
   write(add(add(a, b), b))
   write(minus(b, a))
+  write(minus(a, b))
   write(is_between_5_and_10(3))
   write(is_between_5_and_10(7))
   write(is_between_5_and_10(12))
+  write(to_boolean(5))
+  write(to_boolean(0))
 end

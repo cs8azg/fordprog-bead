@@ -1,0 +1,12 @@
+# too many arguments
+function natural add(natural a, natural b)
+  natural sum
+begin
+  sum := a + b
+  return sum
+end
+
+program test_function_call
+begin
+  add(5, 6, 7)
+end

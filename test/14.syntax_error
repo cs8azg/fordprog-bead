@@ -1,0 +1,8 @@
+# no begin for function body
+function natural five()
+  return 5
+end
+
+program test_function_declaration
+begin
+end

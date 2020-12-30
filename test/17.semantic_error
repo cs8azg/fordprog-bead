@@ -1,0 +1,14 @@
+# not all branches return a value
+function natural five()
+  natural my_var
+begin
+  if false then
+    return 5
+  else
+    my_var := 5
+  endif
+end
+
+program test_function_declaration
+begin
+end

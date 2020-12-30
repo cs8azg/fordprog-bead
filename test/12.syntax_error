@@ -1,0 +1,9 @@
+# no function identifier
+function natural ()
+begin
+  return 5
+end
+
+program test_function_declaration
+begin
+end
