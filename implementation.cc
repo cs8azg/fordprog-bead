@@ -36,6 +36,7 @@ function_declaration::function_declaration(int _line, std::string _name, type _r
         }
     }
     label = next_label();
+    r_context = new routine_context(commands, symbols);
 }
 
 id_expression::id_expression(int _line, std::string _name)
@@ -77,9 +78,28 @@ ternary_expression::ternary_expression(int _line, expression* _cond, expression*
     : line(_line), cond(_cond), exp_then(_exp_then), exp_else(_exp_else)
 {}
 
-function_call_expression::function_call_expression(int _line, std::string _id, std::list<expression*>* _parameters)
-    : line(_line), id(_id), parameters(_parameters)
-{}
+function_call_expression::function_call_expression(
+    int _line, 
+    std::string _id, 
+    std::list<expression*>* _parameters
+) : line(_line), id(_id), parameters(_parameters) {
+    // Checking if the function has been declared
+    if (function_table.count(id) == 0) {
+        error(line, std::string("Undefined function: ") + id);
+    }
+    // Getting the function declaration
+    function_declaration* func = function_table[id];
+    // Checking parameter count
+    if (func->parameter_symbols->size() != parameters->size()) {
+        std::string message = std::string("Incorrect number of arguments when calling function \"") 
+                            + func->name 
+                            + std::string("\": expected ") 
+                            + std::to_string(func->parameter_symbols->size()) 
+                            + std::string(", got ") 
+                            + std::to_string(parameters->size());
+        error(line, message);
+    }
+}
 
 function_call_expression::~function_call_expression() {
     delete parameters;
@@ -143,6 +163,14 @@ for_instruction::~for_instruction() {
     delete from;
     delete to;
     delete_commands(body);
+}
+
+return_instruction::return_instruction(int _line) : instruction(_line) {}
+
+return_instruction::return_instruction(int _line, expression* _exp) : return_instruction(_line), exp(_exp) {}
+
+return_instruction::~return_instruction() {
+    delete exp;
 }
 
 function_call_instruction::function_call_instruction(int _line, function_call_expression* _expression)

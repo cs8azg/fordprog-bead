@@ -12,24 +12,25 @@ execution_context::execution_context(routine_context* _routine_context, std::lis
 
 execution_context::~execution_context() {
     delete value_table;
-    delete commands;
 }
 
 unsigned execution_context::execute() {
-    // TODO
+    context_stack.push(this);
+    execute_commands(commands);
+    context_stack.pop();
 }
 
 unsigned execution_context::get_variable_value(const id_expression* _id_exp) const {
-    if (symbol_table->count(_id_exp->get_name()) == 0) {
-        error(_id_exp->get_line(), std::string("Variable has not been initialized: ") + _id_exp->get_name());
-    }
+    // if (symbol_table->count(_id_exp->get_name()) == 0) {
+    //     error(_id_exp->get_line(), std::string("Variable has not been initialized: ") + _id_exp->get_name());
+    // }
     return value_table->at(_id_exp->get_name());
 }
 
 unsigned execution_context::get_variable_value(int _line, std::string _id) const {
-    if (symbol_table->count(_id) == 0) {
-        error(_line, std::string("Variable has not been initialized: ") + _id);
-    }
+    // if (symbol_table->count(_id) == 0) {
+    //     error(_line, std::string("Variable has not been initialized: ") + _id);
+    // }
     return value_table->at(_id);
 }
 
@@ -52,9 +53,7 @@ function_execution_context::function_execution_context(routine_context* _routine
     initialize_from_arguments();
 }
 
-function_execution_context::~function_execution_context() {
-    delete argument_value_table;
-}
+function_execution_context::~function_execution_context() {}
 
 void function_execution_context::initialize_from_arguments() {
     for (std::map<std::string, unsigned>::iterator it = argument_value_table->begin(); it != argument_value_table->end(); ++it) {
@@ -108,6 +107,10 @@ unsigned binop_expression::get_value() const {
     }
 }
 
+unsigned not_expression::get_value() const {
+    return !(bool)(operand->get_value());
+}
+
 unsigned ternary_expression::get_value() const {
     if (cond->get_value()) {
         return exp_then->get_value();
@@ -116,8 +119,28 @@ unsigned ternary_expression::get_value() const {
     }
 }
 
-unsigned not_expression::get_value() const {
-    return !(bool)(operand->get_value());
+unsigned function_call_expression::get_value() const {
+    function_declaration* func_decl = function_table[id];
+    std::map<std::string, unsigned> argument_value_table;
+    std::list<expression*>::iterator arg_it;
+    std::list<symbol*>::iterator par_it;
+    for (
+        arg_it = parameters->begin(), par_it = func_decl->parameter_symbols->begin(); 
+        arg_it != parameters->end() && par_it != func_decl->parameter_symbols->end(); 
+        ++arg_it, ++par_it
+    ) {
+        argument_value_table[(*par_it)->name] = (*arg_it)->get_value();
+    }
+    function_execution_context exec_context(func_decl->r_context, func_decl->commands, &argument_value_table);
+    exec_context.execute();
+}
+
+bool instruction::had_return_instruction() {
+    return returned;
+}
+
+unsigned instruction::get_return_value() {
+    return return_value;
 }
 
 void assign_instruction::execute() {
@@ -162,37 +185,56 @@ void write_instruction::execute() {
 }
 
 void if_instruction::execute() {
-    if(condition->get_value()) {
-        execute_commands(true_branch);
+    std::pair<bool, unsigned> result;
+    if (condition->get_value()) {
+        result = execute_commands(true_branch);
     } else {
-        execute_commands(false_branch);
+        result = execute_commands(false_branch);
+    }
+    if (result.first) {
+        returned = true;
+        return_value = result.second;
     }
 }
 
 void while_instruction::execute() {
+    std::pair<bool, unsigned> result;
     while(condition->get_value()) {
-        execute_commands(body);
+        result = execute_commands(body);
+        if (result.first) {
+            returned = true;
+            return_value = result.second;
+        }
     }
 }
 
 void for_instruction::execute() {
+    std::pair<bool, unsigned> result;
     for(
         current_context()->set_variable_value(id, from->get_value()); 
         current_context()->get_variable_value(line, id) < to->get_value(); 
         current_context()->set_variable_value(id, current_context()->get_variable_value(line, id) + 1)
     ) {
-    	execute_commands(body);
+    	result = execute_commands(body);
+        if (result.first) {
+            returned = true;
+            return_value = result.second;
+        }
     }
 }
 
-void execute_commands_in_new_context(routine_context context, std::list<instruction*>* commands) {
-    execution_context exec_context(&context, commands);
-    context_stack.push(&exec_context);
-    execute_commands(commands);
-    context_stack.pop();
+void return_instruction::execute() {
+    if (exp != nullptr) {
+        return_value = exp->get_value();
+    }
+    returned = true;
 }
 
-void execute_commands(std::list<instruction*>* commands) {
+void function_call_instruction::execute() {
+    expression->get_value();
+}
+
+std::pair<bool, unsigned> execute_commands(std::list<instruction*>* commands) {
     if(!commands) {
         return;
     }
@@ -200,7 +242,11 @@ void execute_commands(std::list<instruction*>* commands) {
     std::list<instruction*>::iterator it;
     for(it = commands->begin(); it != commands->end(); ++it) {
         (*it)->execute();
+        if ((*it)->had_return_instruction()) {
+            return std::pair<bool, unsigned>(true, (*it)->get_return_value());
+        }
     }
+    return std::pair<bool, unsigned>(false, 0);
 }
 
 execution_context* current_context() {

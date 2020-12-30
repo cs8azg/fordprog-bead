@@ -67,8 +67,24 @@ type not_expression::get_type(routine_context* _context) const {
 }
 
 type function_call_expression::get_type(routine_context* _context) const {
+    // Checking if the function has been declared
     if (function_table.count(id) == 0) {
         error(line, std::string("Undefined function: ") + id);
+    }
+    // Getting the function declaration
+    function_declaration* func = function_table[id];
+    // Type checking arguments
+    std::list<symbol*>::iterator par_it;
+    std::list<expression*>::iterator arg_it;
+    for (
+        par_it = func->parameter_symbols->begin(), arg_it = parameters->begin(); 
+        par_it != func->parameter_symbols->end() && arg_it != parameters->end(); 
+        ++par_it, ++arg_it
+    ) {
+        type argument_type = (*arg_it)->get_type(_context);
+        if ((*par_it)->symbol_type != argument_type) {
+            error(line, std::string("Argument has unexpected type when calling function \"") + func->name + std::string("\" at parameter \"") + (*par_it)->name + "\"");
+        }
     }
     return function_table[id]->return_type;
 }
@@ -115,6 +131,16 @@ void for_instruction::type_check(routine_context* _context) {
     type_check_commands(body, _context);
 }
 
+void return_instruction::type_check(routine_context* _context) {
+    if (exp->get_type(_context) != _context->get_expected_return_type()) {
+        error(line, std::string("Return value has unexpected type"));
+    }
+}
+
+void function_call_instruction::type_check(routine_context* _context) {
+    expression->get_type(_context);
+}
+
 routine_context::routine_context(std::list<instruction*>* _commands, std::list<symbol*>* _symbols)
     : commands(_commands)
 {
@@ -123,18 +149,34 @@ routine_context::routine_context(std::list<instruction*>* _commands, std::list<s
     }
 }
 
+routine_context::routine_context(
+    std::list<instruction*>* _commands, 
+    std::list<symbol*>* _symbols, 
+    type _expected_return_type
+) : routine_context(_commands, _symbols) {
+    expected_return_type = _expected_return_type;
+}
+
 void routine_context::declare_variable(symbol* _symbol) {
-    if(symbol_table.count(_symbol->name) > 0) {
+    if (symbol_table->count(_symbol->name) > 0) {
         error(_symbol->line, std::string("Re-declared variable: ") + _symbol->name);
     }
-    symbol_table[_symbol->name] = _symbol;
+    (*symbol_table)[_symbol->name] = _symbol;
 }
 
 type routine_context::get_variable_type(int _line, std::string _name) {
-    if (symbol_table.count(_name) == 0) {
+    if (symbol_table->count(_name) == 0) {
         error(_line, std::string("Undefined variable: ") + _name);
     }
-    return symbol_table[_name]->symbol_type;
+    return (*symbol_table)[_name]->symbol_type;
+}
+
+std::map<std::string, symbol*>* routine_context::get_symbol_table() {
+    return symbol_table;
+}
+
+type routine_context::get_expected_return_type() {
+    return expected_return_type;
 }
 
 void declare_function(function_declaration* function) {

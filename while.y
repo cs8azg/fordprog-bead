@@ -15,6 +15,7 @@ int yylex(yy::parser::semantic_type* yylval, yy::parser::location_type* yylloc);
 %token BEG
 %token END
 %token FUN
+%token RET
 %token BOO
 %token NAT
 %token REA
@@ -194,19 +195,29 @@ command:
 	    $$ = new for_instruction(@1.begin.line, $2, $4, $6, $8);
     }
 |
+    RET
+    {
+        $$ = new return_instruction(@1.begin.line);
+    }
+|
+    RET expression
+    {
+        $$ = new return_instruction(@1.begin.line, $2);
+    }
+|
     function_expression
     {
         $$ = new function_call_instruction(@1.begin.line, $1);
     }
 ;
 
-parameters:
+arguments:
     // empty
     {
         $$ = new std::list<unsigned*>();
     }
 |
-    parameters COM expression
+    arguments COM expression
     {
         $1->push_back($2);
         $$ = $1;
@@ -328,8 +339,8 @@ expression:
 ;
 
 function_expression:
-    ID OP parameters CL
-    {
+    ID OP arguments CL
+    {  
         $$ = new function_call_expression(@1.begin.line, $1, $3);
     }
 ;

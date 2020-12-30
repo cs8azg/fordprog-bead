@@ -68,6 +68,7 @@ struct function_declaration {
     std::list<symbol*>* parameter_symbols;
     std::list<symbol*>* symbols;
     std::list<instruction*>* commands;
+    routine_context* r_context;
 };
 
 extern std::map<std::string, function_declaration*> function_table;
@@ -147,8 +148,12 @@ class instruction {
     virtual std::string get_code() = 0;
     virtual void execute() = 0;
     int get_line();
+    bool had_return_instruction();
+    unsigned get_return_value();
   protected:
     int line;
+    bool returned;
+    unsigned return_value;
 };
 
 class assign_instruction : public instruction {
@@ -226,6 +231,18 @@ class for_instruction : public instruction {
     std::list<instruction*>* body;
 };
 
+class return_instruction : public instruction {
+  public:
+    return_instruction(int _line);
+    return_instruction(int _line, expression* _exp);
+    ~return_instruction();
+    void type_check(routine_context* _context);
+    std::string get_code();
+    void execute();
+  private:
+    expression* exp;
+};
+
 class function_call_instruction : public instruction {
   public:
     function_call_instruction(int _line, function_call_expression* _expression);
@@ -240,12 +257,15 @@ class function_call_instruction : public instruction {
 class routine_context {
   public:
     routine_context(std::list<instruction*>* _commands, std::list<symbol*>* _symbols);
+    routine_context(std::list<instruction*>* _commands, std::list<symbol*>* _symbols, type _expected_return_type);
     type get_variable_type(int _line, std::string _name);
     std::map<std::string, symbol*>* get_symbol_table();
+    type get_expected_return_type();
   private:
     void declare_variable(symbol* _symbol);
     std::map<std::string, symbol*>* symbol_table;
     std::list<instruction*>* commands;
+    type expected_return_type;
 };
 
 class execution_context {
@@ -282,7 +302,7 @@ void generate_code_of_commands(std::ostream& out, std::list<instruction*>* comma
 
 void execute_commands_in_new_context(routine_context context, std::list<instruction*>* commands);
 
-void execute_commands(std::list<instruction*>* commands);
+std::pair<bool, unsigned> execute_commands(std::list<instruction*>* commands);
 
 execution_context* current_context();
 
