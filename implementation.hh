@@ -146,14 +146,10 @@ class instruction {
     virtual ~instruction();
     virtual void type_check(routine_context* _context) = 0;
     virtual std::string get_code() = 0;
-    virtual void execute() = 0;
+    virtual execution_results execute() = 0;
     int get_line();
-    bool had_return_instruction();
-    unsigned get_return_value();
   protected:
     int line;
-    bool returned;
-    unsigned return_value;
 };
 
 class assign_instruction : public instruction {
@@ -162,7 +158,7 @@ class assign_instruction : public instruction {
     ~assign_instruction();
     void type_check(routine_context* _context);
     std::string get_code();
-    void execute();
+    execution_results execute();
     std::string get_id();
     unsigned get_value();
   private:
@@ -175,7 +171,7 @@ class read_instruction : public instruction {
     read_instruction(int _line, std::string _id);
     void type_check(routine_context* _context);
     std::string get_code();
-    void execute();
+    execution_results execute();
   private:
     std::string id;
 };
@@ -186,7 +182,7 @@ class write_instruction : public instruction {
     ~write_instruction();
     void type_check(routine_context* _context);
     std::string get_code();
-    void execute();
+    execution_results execute();
   private:
     expression* exp;
     type exp_type;
@@ -198,7 +194,7 @@ class if_instruction : public instruction {
     ~if_instruction();
     void type_check(routine_context* _context);
     std::string get_code();
-    void execute();
+    execution_results execute();
   private:
     expression* condition;
     std::list<instruction*>* true_branch;
@@ -211,7 +207,7 @@ class while_instruction : public instruction {
     ~while_instruction();
     void type_check(routine_context* _context);
     std::string get_code();
-    void execute();
+    execution_results execute();
   private:
     expression* condition;
     std::list<instruction*>* body;
@@ -223,7 +219,7 @@ class for_instruction : public instruction {
     ~for_instruction();
     void type_check(routine_context* _context);
     std::string get_code();
-    void execute();
+    execution_results execute();
   private:
     std::string id;
     expression* from;
@@ -238,7 +234,7 @@ class return_instruction : public instruction {
     ~return_instruction();
     void type_check(routine_context* _context);
     std::string get_code();
-    void execute();
+    execution_results execute();
   private:
     expression* exp;
 };
@@ -249,7 +245,7 @@ class function_call_instruction : public instruction {
     ~function_call_instruction();
     void type_check(routine_context* _context);
     std::string get_code();
-    void execute();
+    execution_results execute();
   private:
     function_call_expression* expression;
 };
@@ -294,6 +290,11 @@ class function_execution_context : public execution_context {
     std::map<std::string, unsigned>* argument_value_table;
 };
 
+struct execution_results {
+  bool had_return_instruction;
+  unsigned return_value;
+};
+
 void declare_function(function_declaration* function);
 
 void type_check_commands(std::list<instruction*>* commands, routine_context* context);
@@ -302,7 +303,7 @@ void generate_code_of_commands(std::ostream& out, std::list<instruction*>* comma
 
 void execute_commands_in_new_context(routine_context context, std::list<instruction*>* commands);
 
-std::pair<bool, unsigned> execute_commands(std::list<instruction*>* commands);
+execution_results execute_commands(std::list<instruction*>* commands);
 
 execution_context* current_context();
 

@@ -143,8 +143,9 @@ unsigned instruction::get_return_value() {
     return return_value;
 }
 
-void assign_instruction::execute() {
+execution_results assign_instruction::execute() {
     current_context()->set_variable_value(this);
+    return { false, 0 };
 }
 
 std::string assign_instruction::get_id() {
@@ -155,7 +156,7 @@ unsigned assign_instruction::get_value() {
     return right->get_value();
 }
 
-void read_instruction::execute() {
+execution_results read_instruction::execute() {
     std::string input_line;
     getline(std::cin, input_line);
     if (current_context()->get_variable_type(id) == natural) {
@@ -170,9 +171,10 @@ void read_instruction::execute() {
             current_context()->set_variable_value(id, 0);
         }
     }
+    return { false, 0 };
 }
 
-void write_instruction::execute() {
+execution_results write_instruction::execute() {
     if(exp_type == natural) {
         std::cout << exp->get_value() << std::endl;
     } else if(exp_type == boolean) {
@@ -182,71 +184,69 @@ void write_instruction::execute() {
             std::cout << "false" << std::endl;
         }
     }
+    return { false, 0 };
 }
 
-void if_instruction::execute() {
-    std::pair<bool, unsigned> result;
+execution_results if_instruction::execute() {
     if (condition->get_value()) {
-        result = execute_commands(true_branch);
+        return execute_commands(true_branch);
     } else {
-        result = execute_commands(false_branch);
-    }
-    if (result.first) {
-        returned = true;
-        return_value = result.second;
+        return execute_commands(false_branch);
     }
 }
 
-void while_instruction::execute() {
-    std::pair<bool, unsigned> result;
+execution_results while_instruction::execute() {
+    execution_results results;
     while(condition->get_value()) {
-        result = execute_commands(body);
-        if (result.first) {
-            returned = true;
-            return_value = result.second;
+        results = execute_commands(body);
+        if (results.had_return_instruction) {
+            return results;
         }
     }
+    return { false, 0 };
 }
 
-void for_instruction::execute() {
-    std::pair<bool, unsigned> result;
+execution_results for_instruction::execute() {
+    execution_results results;
     for(
         current_context()->set_variable_value(id, from->get_value()); 
         current_context()->get_variable_value(line, id) < to->get_value(); 
         current_context()->set_variable_value(id, current_context()->get_variable_value(line, id) + 1)
     ) {
-    	result = execute_commands(body);
-        if (result.first) {
-            returned = true;
-            return_value = result.second;
+    	results = execute_commands(body);
+        if (results.had_return_instruction) {
+            return results;
         }
     }
+    return { false, 0 };
 }
 
-void return_instruction::execute() {
+execution_results return_instruction::execute() {
     if (exp != nullptr) {
-        return_value = exp->get_value();
+        return { true, exp->get_value() };
     }
-    returned = true;
+    return { true, 0 };
 }
 
-void function_call_instruction::execute() {
+execution_results function_call_instruction::execute() {
     expression->get_value();
+    return { false, 0 };
 }
 
-std::pair<bool, unsigned> execute_commands(std::list<instruction*>* commands) {
+execution_results execute_commands(std::list<instruction*>* commands) {
     if(!commands) {
         return;
     }
 
+    execution_results results;
     std::list<instruction*>::iterator it;
     for(it = commands->begin(); it != commands->end(); ++it) {
-        (*it)->execute();
-        if ((*it)->had_return_instruction()) {
-            return std::pair<bool, unsigned>(true, (*it)->get_return_value());
+        results = (*it)->execute();
+        if (results.had_return_instruction) {
+            return results;
         }
     }
-    return std::pair<bool, unsigned>(false, 0);
+    return { false, 0 };
 }
 
 execution_context* current_context() {
