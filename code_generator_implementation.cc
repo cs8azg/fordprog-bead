@@ -2,13 +2,13 @@
 #include <iostream>
 #include <sstream>
 
-std::string number_expression::get_code() const {
+std::string number_expression::get_code(routine_context* _context) const {
     std::stringstream ss;
     ss << "mov eax," << value << std::endl;
     return ss.str();
 }
 
-std::string boolean_expression::get_code() const {
+std::string boolean_expression::get_code(routine_context* _context) const {
     std::stringstream ss;
     ss << "mov al," << (value ? 1 : 0) << std::endl;
     return ss.str();
@@ -16,37 +16,21 @@ std::string boolean_expression::get_code() const {
 
 std::string next_label() {
     std::stringstream ss;
-    ss << "label" << id++;
-    return ss.str();
-}
-
-std::string symbol::get_code() {
-    std::stringstream ss;
-    ss << label << ": resb " << get_size() << "\t; variable: " << name << std::endl;
+    ss << "label_" << id++;
     return ss.str();
 }
 
 int symbol::get_size() {
-    if(symbol_type == boolean) {
-        return 1;
-    } else {
-        return 4;
-    }
+    return symbol_type == boolean ? 1 : 4;
 }
 
 std::string get_register(type t) {
-    if(t == boolean) {
-        return "al";
-    } else {
-    return "eax";
-    }
+    return t == boolean ? "al" : "eax";
 }
 
-std::string id_expression::get_code() const {
-    // if(symbol_table.count(name) == 0) {
-    //     error(line, std::string("Undefined variable: ") + name);
-    // }
-    // return std::string("mov eax,[") + symbol_table[name].label + "]\n";
+std::string id_expression::get_code(routine_context* _context) const {
+    unsigned offset_from_ebp = _context->get_variable_offset_from_ebp(name);
+    return "mov eax, [ebp-" + std::to_string(offset_from_ebp) + "]\n";
 }
 
 std::string operator_code(std::string op) {
@@ -92,7 +76,7 @@ std::string operator_code(std::string op) {
         ss << "cmp al,0" << std::endl;
         ss << "cmove ax,cx" << std::endl;
     } else {
-        error(-1, std::string("Bug: Unsupported binary operator: ") + op);
+        error(-1, "Bug: Unsupported binary operator: " + op);
     }
     return ss.str();
 }
@@ -110,69 +94,73 @@ std::string eq_code(type t) {
     return ss.str();
 }
 
-std::string binop_expression::get_code() const {
+std::string binop_expression::get_code(routine_context* _context) const {
     std::stringstream ss;
-    ss << left->get_code();
+    ss << left->get_code(_context);
     ss << "push eax" << std::endl;
-    ss << right->get_code();
+    ss << right->get_code(_context);
     ss << "mov ecx,eax" << std::endl;
     ss << "pop eax" << std::endl;
-    // ss << (op == "=" ? eq_code(left->get_type()) : operator_code(op));
+    ss << (op == "=" ? eq_code(left->get_type(_context)) : operator_code(op));
     return ss.str();
 }
 
-std::string ternary_expression::get_code() const {
-    std::string else_label = next_label();
-    std::string end_label = next_label();
+std::string not_expression::get_code(routine_context* _context) const {
     std::stringstream ss;
-    ss << cond->get_code();
-    ss << "cmp al,1" << std::endl;
-    ss << "jne near " << else_label << std::endl;
-    ss << exp_then->get_code();
-    ss << "jmp " << end_label << std::endl;
-    ss << else_label << ":" << std::endl;
-    ss << exp_else->get_code();
-    ss << end_label << ":" << std::endl;
-    return ss.str();
-}
-
-std::string not_expression::get_code() const {
-    std::stringstream ss;
-    ss << operand->get_code();
+    ss << operand->get_code(_context);
     ss << "xor al,1" << std::endl;
     return ss.str();
 }
 
-std::string function_call_expression::get_code() const {
-    return "";
+std::string ternary_expression::get_code(routine_context* _context) const {
+    std::string else_label = next_label();
+    std::string end_label = next_label();
+    std::stringstream ss;
+    ss << cond->get_code(_context);
+    ss << "cmp al,1" << std::endl;
+    ss << "jne near " << else_label << std::endl;
+    ss << exp_then->get_code(_context);
+    ss << "jmp " << end_label << std::endl;
+    ss << else_label << ":" << std::endl;
+    ss << exp_else->get_code(_context);
+    ss << end_label << ":" << std::endl;
+    return ss.str();
 }
 
-std::string assign_instruction::get_code() {
+std::string function_call_expression::get_code(routine_context* _context) const {
     std::stringstream ss;
-    ss << right->get_code();
-    // ss << "mov [" + symbol_table[left].label + "]," << get_register(symbol_table[left].symbol_type) << std::endl;
+    for (std::list<expression*>::reverse_iterator it = parameters->rbegin(); it != parameters->rend(); ++it) {
+        ss << (*it)->get_code(_context);
+        ss << "push " << get_register((*it)->get_type(_context)) << std::endl;
+    }
+    ss << "call function_" << id << std::endl;
+    return ss.str();
+}
+
+std::string assign_instruction::get_code(routine_context* _context) {
+    unsigned offset_from_ebp = _context->get_variable_offset_from_ebp(left);
+
+    std::stringstream ss;
+    ss << right->get_code(_context);
+    ss << "mov [ebp-" << std::to_string(offset_from_ebp) << "]," << get_register(_context->get_symbol_table()->at(left)->symbol_type) << std::endl;
     return ss.str();
 }
 
 std::string get_type_name(type t) {
-    if(t == boolean) {
-        return "boolean";
-    } else {
-        return "natural";
-    }
+    return t == boolean ? "boolean" : "natural";
 }
 
-std::string read_instruction::get_code() {
-    type t;// = symbol_table[id].symbol_type;
+std::string read_instruction::get_code(routine_context* _context) {
+    symbol* destination = _context->get_symbol_table()->at(id);
     std::stringstream ss;
-    ss << "call read_" << get_type_name(t) << std::endl;
-    // ss << "mov [" << symbol_table[id].label << "]," << get_register(t) << std::endl;
+    ss << "call read_" << get_type_name(destination->symbol_type) << std::endl;
+    ss << "mov [" << destination->label << "]," << get_register(destination->symbol_type) << std::endl;
     return ss.str();
 }
 
-std::string write_instruction::get_code() {
+std::string write_instruction::get_code(routine_context* _context) {
     std::stringstream ss;
-    ss << exp->get_code();
+    ss << exp->get_code(_context);
     if(exp_type == boolean) {
         ss << "and eax,1" << std::endl;
     }
@@ -182,50 +170,52 @@ std::string write_instruction::get_code() {
     return ss.str();
 }
 
-std::string if_instruction::get_code() {
+std::string if_instruction::get_code(routine_context* _context) {
     std::string else_label = next_label();
     std::string end_label = next_label();
     std::stringstream ss;
-    ss << condition->get_code();
+    ss << condition->get_code(_context);
     ss << "cmp al,1" << std::endl;
     ss << "jne near " << else_label << std::endl;
-    generate_code_of_commands(ss, true_branch);
+    generate_code_of_commands(ss, _context, true_branch);
     ss << "jmp " << end_label << std::endl;
     ss << else_label << ":" << std::endl;
-    generate_code_of_commands(ss, false_branch);
+    generate_code_of_commands(ss, _context, false_branch);
     ss << end_label << ":" << std::endl;
     return ss.str();
 }
 
-std::string while_instruction::get_code() {
+std::string while_instruction::get_code(routine_context* _context) {
     std::string begin_label = next_label();
     std::string end_label = next_label();
     std::stringstream ss;
     ss << begin_label << ":" << std::endl;
-    ss << condition->get_code();
+    ss << condition->get_code(_context);
     ss << "cmp al,1" << std::endl;
     ss << "jne near " << end_label << std::endl;
-    generate_code_of_commands(ss, body);
+    generate_code_of_commands(ss, _context, body);
     ss << "jmp " << begin_label << std::endl;
     ss << end_label << ":" << std::endl;
     return ss.str();
 }
 
-std::string for_instruction::get_code() {
+std::string for_instruction::get_code(routine_context* _context) {
     std::string begin_label = next_label();
     std::string end_label = next_label();
     std::stringstream ss;
 
+    unsigned offset_from_ebp = _context->get_variable_offset_from_ebp(id);
+
     // Initializing iterator
-    ss << from->get_code();
-    // ss << "mov [" + symbol_table[id].label + "], eax" << std::endl;
+    ss << from->get_code(_context);
+    ss << "mov [ebp-" + std::to_string(offset_from_ebp) + "], eax" << std::endl;
 
     // Loop condition evaluation
     ss << begin_label << ":" << std::endl;
     // - Moving iterator and upper bound values to eax ecx registers
     // ss << "mov eax,[" << symbol_table[id].label << "]" << std::endl;
     ss << "push eax" << std::endl;
-    ss << to->get_code();
+    ss << to->get_code(_context);
     ss << "mov ecx,eax" << std::endl;
     ss << "pop eax" << std::endl;
     // - Comparing iterator to upper bound
@@ -235,11 +225,11 @@ std::string for_instruction::get_code() {
     ss << "jne near " << end_label << std::endl;
 
     // Body execution
-    generate_code_of_commands(ss, body);
+    generate_code_of_commands(ss, _context, body);
     // - Stepping iterator
-    // ss << "mov eax,[" << symbol_table[id].label << "]" << std::endl;
+    ss << "mov eax,[ebp-" + std::to_string(offset_from_ebp) + "]" << std::endl;
     ss << "inc eax" << std::endl;
-    // ss << "mov [" + symbol_table[id].label + "]," << get_register(symbol_table[id].symbol_type) << std::endl;
+    ss << "mov [ebp-" + std::to_string(offset_from_ebp) + "]," << get_register(_context->get_symbol_table()->at(id)->symbol_type) << std::endl;
     // - Jumping to condition evaluation
     ss << "jmp " << begin_label << std::endl;
 
@@ -248,41 +238,103 @@ std::string for_instruction::get_code() {
     return ss.str();
 }
 
-std::string function_call_instruction::get_code() {
+std::string function_call_instruction::get_code(routine_context* _context) {
     return "";
 }
 
-std::string return_instruction::get_code() {
+std::string return_instruction::get_code(routine_context* _context) {
     return "";
 }
 
-void generate_code_of_commands(std::ostream& out, std::list<instruction*>* commands) {
-    if(!commands) {
+std::string function_declaration::get_code() {
+    std::stringstream ss;
+    std::string function_label = "function_" + name;
+
+    // Function label
+    ss << function_label << ":" << std::endl;
+
+    // Setting stack pointer
+    ss << "push ebp" << std::endl;
+    ss << "mov ebp, esp" << std::endl;
+
+    // Allocating space on stack for local variables
+    ss << "sub esp, " << std::to_string(r_context->get_total_offset()) << std::endl;
+
+    // Getting arguments
+    ss << "push eax" << std::endl;
+    // Moving arguments from outside of stack to corresponding index of local variable
+    unsigned parameter_offset_from_ebp = 0;
+    for (std::list<symbol*>::iterator it = parameter_symbols->begin(); it != parameter_symbols->end(); ++it) {
+        parameter_offset_from_ebp += (*it)->get_size();
+        std::string regist = get_register((*it)->symbol_type);
+        ss << "mov [ebp+" << std::to_string(parameter_offset_from_ebp) << "], " << regist << std::endl;
+        ss << "mov " << regist << ", [ebp+" << std::to_string(r_context->get_variable_offset_from_ebp((*it)->name)) << "]" << std::endl;
+    }
+    ss << "pop eax" << std::endl;
+
+    // Function body
+    generate_code_of_commands(ss, r_context, r_context->get_commands());
+
+    // Restoring previous stack pointer
+    ss << "mov esp, ebp" << std::endl;
+    ss << "pop ebp" << std::endl;
+    ss << "ret 4" << std::endl;
+
+    return ss.str();
+}
+
+unsigned routine_context::get_variable_offset_from_ebp(std::string _name) const {
+    if (symbol_table->count(_name) == 0) {
+        error(line, "Undefined variable: " + _name);
+    }
+
+    unsigned offset_from_ebp = 0;
+    for (
+        std::map<std::string, symbol*>::iterator it = symbol_table->begin(); 
+        it != symbol_table->end() && it->first.compare(_name) != 0;
+        ++it
+    ) {
+        offset_from_ebp += it->second->get_size();
+    }
+    return offset_from_ebp;
+}
+
+unsigned routine_context::get_total_offset() const {
+    unsigned total_offset = 0;
+    for (
+        std::map<std::string, symbol*>::iterator it = symbol_table->begin(); 
+        it != symbol_table->end();
+        ++it
+    ) {
+        total_offset += it->second->get_size();
+    }
+    return total_offset;
+}
+
+void generate_code_of_commands(std::ostream& out, routine_context* context, std::list<instruction*>* commands) {
+    if(commands->size() == 0) {
         return;
     }
 
     std::list<instruction*>::iterator it;
     for(it = commands->begin(); it != commands->end(); ++it) {
-        out << (*it)->get_code();
+        out << (*it)->get_code(context);
     }
 }
 
-void generate_code(std::list<instruction*>* commands) {
+void generate_code(routine_context* context) {
     std::cout << "global main" << std::endl;
     std::cout << "extern write_natural" << std::endl;
     std::cout << "extern read_natural" << std::endl;
     std::cout << "extern write_boolean" << std::endl;
     std::cout << "extern read_boolean" << std::endl;
     std::cout << std::endl;
-    std::cout << "section .bss" << std::endl;
-    std::map<std::string,symbol>::iterator it;
-    // for(it = symbol_table.begin(); it != symbol_table.end(); ++it) {
-    //     std::cout << it->second.get_code();
-    // }
-    std::cout << std::endl;
     std::cout << "section .text" << std::endl;
     std::cout << "main:" << std::endl;
-    generate_code_of_commands(std::cout, commands);
+    // Allocating space on stack for local variables
+    std::cout << "sub esp, " << std::to_string(context->get_total_offset()) << std::endl;
+    // TODO whole context needs to be passed
+    generate_code_of_commands(std::cout, context, context->get_commands());
     std::cout << "xor eax,eax" << std::endl;
     std::cout << "ret" << std::endl;
 }
