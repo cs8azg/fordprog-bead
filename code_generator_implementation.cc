@@ -152,9 +152,10 @@ std::string get_type_name(type t) {
 
 std::string read_instruction::get_code(routine_context* _context) {
     symbol* destination = _context->get_symbol_table()->at(id);
+    unsigned offset_from_ebp = _context->get_variable_offset_from_ebp(id);
     std::stringstream ss;
     ss << "call read_" << get_type_name(destination->symbol_type) << std::endl;
-    ss << "mov [" << destination->label << "]," << get_register(destination->symbol_type) << std::endl;
+    ss << "mov [ebp-" << std::to_string(offset_from_ebp) << "]," << get_register(destination->symbol_type) << std::endl;
     return ss.str();
 }
 
@@ -213,7 +214,7 @@ std::string for_instruction::get_code(routine_context* _context) {
     // Loop condition evaluation
     ss << begin_label << ":" << std::endl;
     // - Moving iterator and upper bound values to eax ecx registers
-    // ss << "mov eax,[" << symbol_table[id].label << "]" << std::endl;
+    ss << "mov eax,[ebp-" << _context->get_variable_offset_from_ebp(id) << "]" << std::endl;
     ss << "push eax" << std::endl;
     ss << to->get_code(_context);
     ss << "mov ecx,eax" << std::endl;
@@ -264,12 +265,8 @@ std::string function_declaration::get_code() {
     // Function label
     ss << function_label << ":" << std::endl;
 
-    // Setting stack pointer
-    ss << "push ebp" << std::endl;
-    ss << "mov ebp, esp" << std::endl;
-
-    // Allocating space on stack for local variables
-    ss << allocate_stack(r_context->get_total_offset_in_bytes());
+    // Creating current stack
+    ss << "enter " << r_context->get_total_offset_in_bytes() << ", 0" << std::endl;
 
     ss << "push eax" << std::endl;
     // Moving arguments from outside of stack to corresponding offset of local variable
@@ -289,9 +286,8 @@ std::string function_declaration::get_code() {
     generate_code_of_commands(ss, r_context, r_context->get_commands());
 
     ss << end_label << ":" << std::endl;
-    // Restoring previous stack pointer
-    ss << "mov esp, ebp" << std::endl;
-    ss << "pop ebp" << std::endl;
+    // Restoring previous stack
+    ss << "leave" << std::endl;
     ss << "ret" << std::to_string(parameter_offset_from_ebp) << std::endl;
 
     return ss.str();
@@ -303,12 +299,16 @@ unsigned routine_context::get_variable_offset_from_ebp(std::string _name) const 
     }
 
     unsigned offset_from_ebp = 0;
+    bool found = false;
     for (
         std::map<std::string, symbol*>::iterator it = symbol_table->begin(); 
-        it != symbol_table->end() && it->first.compare(_name) != 0;
+        it != symbol_table->end() && !found;
         ++it
     ) {
         offset_from_ebp += it->second->get_size();
+        if (it->first.compare(_name) == 0) {
+            found = true;
+        }
     }
     return offset_from_ebp;
 }
@@ -332,7 +332,7 @@ std::string allocate_stack(unsigned total_bytes) {
 }
 
 void generate_code_of_commands(std::ostream& out, routine_context* context, std::list<instruction*>* commands) {
-    if(commands->size() == 0) {
+    if (!commands || commands->size() == 0) {
         return;
     }
 
@@ -359,9 +359,14 @@ void generate_code(routine_context* context) {
     }
 
     std::cout << "main:" << std::endl;
-    std::cout << allocate_stack(context->get_total_offset_in_bytes());
+    std::cout << "enter " << std::to_string(context->get_total_offset_in_bytes()) << ", 0" << std::endl;
     generate_code_of_commands(std::cout, context, context->get_commands());
     std::cout << exit_label << ":" << std::endl;
     std::cout << "xor eax,eax" << std::endl;
+    std::cout << "leave" << std::endl;
     std::cout << "ret" << std::endl;
+}
+
+void debug_comment(std::string comment) {
+    std::cout << "; " << comment << std::endl;
 }

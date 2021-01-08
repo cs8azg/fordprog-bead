@@ -128,7 +128,7 @@ program:
 
         // Handle commands
         if (current_mode == compiler) {
-            generate_code($5);
+            generate_code(&context);
         } else {
             execution_context(&context).execute();
         }

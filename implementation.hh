@@ -333,4 +333,6 @@ void generate_code_of_commands(std::ostream& out, routine_context* context, std:
 
 void generate_code(routine_context* context);
 
+void debug_comment(std::string comment);
+
 #endif // IMPLEMENTATION_HH
