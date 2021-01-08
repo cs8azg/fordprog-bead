@@ -10,7 +10,7 @@ begin
   return sum
 end
 
-function natural minus(natural a, natural b)
+function natural subtract(natural a, natural b)
   natural diff
 begin
   if b > a then
@@ -56,8 +56,8 @@ begin
   write(add(a, 5))
   write(add(2, 4))
   write(add(add(a, b), b))
-  write(minus(b, a))
-  write(minus(a, b))
+  write(subtract(b, a))
+  write(subtract(a, b))
   write(is_between_5_and_10(3))
   write(is_between_5_and_10(7))
   write(is_between_5_and_10(12))

@@ -36,7 +36,7 @@ function_declaration::function_declaration(int _line, std::string _name, type _r
         }
     }
     label = next_label();
-    r_context = new routine_context(line, commands, symbols);
+    r_context = new routine_context(line, commands, symbols, parameter_symbols, return_type);
 }
 
 id_expression::id_expression(int _line, std::string _name)

@@ -266,21 +266,22 @@ std::string function_declaration::get_code() {
     ss << function_label << ":" << std::endl;
 
     // Creating current stack
-    ss << "enter " << r_context->get_total_offset_in_bytes() << ", 0" << std::endl;
+    unsigned stack_size = r_context->get_total_offset_in_bytes();
+    ss << "enter " << std::to_string(stack_size) << ", 0" << std::endl;
 
-    ss << "push eax" << std::endl;
-    // Moving arguments from outside of stack to corresponding offset of local variable
     unsigned parameter_offset_from_ebp = 0;
-    for (std::list<symbol*>::iterator it = parameter_symbols->begin(); it != parameter_symbols->end(); ++it) {
-        // Increasing offset by the size of the current parameter
-        parameter_offset_from_ebp += (*it)->get_size();
-        // Getting parameter register by its type
-        std::string regist = get_register((*it)->symbol_type);
-        // Moving argument to current stack as local variable
-        ss << "mov [ebp+" << std::to_string(parameter_offset_from_ebp) << "], " << regist << std::endl;
-        ss << "mov " << regist << ", [ebp+" << std::to_string(r_context->get_variable_offset_from_ebp((*it)->name)) << "]" << std::endl;
+    if (parameter_symbols->size() > 0) {
+        // Moving arguments from outside of stack to corresponding offset of local variable
+        for (std::list<symbol*>::iterator it = parameter_symbols->begin(); it != parameter_symbols->end(); ++it) {
+            // Increasing offset by the size of the current parameter
+            parameter_offset_from_ebp += (*it)->get_size();
+            // Getting parameter register by its type
+            std::string regist = get_register((*it)->symbol_type);
+            // Moving argument to current stack as local variable
+            ss << "mov " << regist << ", [ebp+" << std::to_string(parameter_offset_from_ebp + 4) << "]" << std::endl;
+            ss << "mov [ebp-" << std::to_string(r_context->get_variable_offset_from_ebp((*it)->name)) << "], " << regist << std::endl;
+        }
     }
-    ss << "pop eax" << std::endl;
 
     // Function body
     generate_code_of_commands(ss, r_context, r_context->get_commands());
@@ -288,7 +289,7 @@ std::string function_declaration::get_code() {
     ss << end_label << ":" << std::endl;
     // Restoring previous stack
     ss << "leave" << std::endl;
-    ss << "ret" << std::to_string(parameter_offset_from_ebp) << std::endl;
+    ss << "ret " << std::to_string(parameter_offset_from_ebp) << std::endl;
 
     return ss.str();
 }
@@ -352,10 +353,11 @@ void generate_code(routine_context* context) {
     std::cout << "extern read_boolean" << std::endl;
     std::cout << std::endl;
 
-    std::cout << "section .text" << std::endl;
+    std::cout << "section .text" << std::endl << std::endl;
 
     for (std::map<std::string, function_declaration*>::iterator it = function_table.begin(); it != function_table.end(); ++it) {
         std::cout << it->second->get_code();
+        std::cout << std::endl;
     }
 
     std::cout << "main:" << std::endl;
