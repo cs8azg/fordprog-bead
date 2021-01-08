@@ -1,3 +1,4 @@
+# Function return type does not match type of symbol on left hand side of assignment
 function natural five()
 begin
   return 5

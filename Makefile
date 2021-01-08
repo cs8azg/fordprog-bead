@@ -21,7 +21,7 @@ test_interpreter: while exec_write_natural exec_write_boolean exec_read exec_ari
 test_compiler: while comp_write_natural comp_write_boolean comp_read comp_arithmetic comp_logic comp_assignment comp_branching comp_looping comp_divisor comp_function_declaration comp_function_call
 
 .PHONY: test_lexical_errors
-test_lexical_errors: test/01.lexical_error
+test_lexical_errors: test/*.lexical_error
 	! ./while -i test/01.lexical_error 2> /dev/null
 
 .PHONY: test_syntax_errors
@@ -45,7 +45,7 @@ test_syntax_errors: test/*.syntax_error
 
 
 .PHONY: test_semantic_errors
-test_semantic_errors: test/01.semantic_error test/02.semantic_error test/03.semantic_error test/04.semantic_error test/05.semantic_error test/06.semantic_error 
+test_semantic_errors: test/*.semantic_error
 	! ./while -i test/01.semantic_error 2> /dev/null
 	! ./while -i test/02.semantic_error 2> /dev/null
 	! ./while -i test/03.semantic_error 2> /dev/null
@@ -62,6 +62,7 @@ test_semantic_errors: test/01.semantic_error test/02.semantic_error test/03.sema
 	! ./while -i test/22.semantic_error 2> /dev/null
 	! ./while -i test/23.semantic_error 2> /dev/null
 	! ./while -i test/24.semantic_error 2> /dev/null
+	! ./while -i test/25.semantic_error 2> /dev/null
 
 .PHONY: exec_write_natural
 exec_write_natural: test/test_write_natural.ok test/test_write_natural.out

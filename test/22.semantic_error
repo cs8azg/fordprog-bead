@@ -1,3 +1,4 @@
+# Undefined variable (accessing variable of function context from main)
 function natural add(natural a, natural b)
   natural sum
 begin

@@ -1,0 +1,5 @@
+# Undefined function
+program test_function_call
+begin
+  add(1, 2)
+end
