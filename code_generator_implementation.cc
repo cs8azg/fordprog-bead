@@ -239,16 +239,27 @@ std::string for_instruction::get_code(routine_context* _context) {
 }
 
 std::string function_call_instruction::get_code(routine_context* _context) {
-    return "";
+    std::stringstream ss;
+    ss << "push eax";
+    ss << func_exp->get_code(_context);
+    ss << "pop eax";
+    return ss.str();
 }
 
 std::string return_instruction::get_code(routine_context* _context) {
-    return "";
+    std::stringstream ss;
+    // Placing return value on eax
+    ss << exp->get_code(_context);
+    // Jumping to the end of the routine
+    ss << "jmp " << _context->end_label << std::endl;
+    return ss.str();
 }
 
 std::string function_declaration::get_code() {
     std::stringstream ss;
     std::string function_label = "function_" + name;
+    std::string end_label = next_label();
+    r_context->end_label = end_label;
 
     // Function label
     ss << function_label << ":" << std::endl;
@@ -258,15 +269,17 @@ std::string function_declaration::get_code() {
     ss << "mov ebp, esp" << std::endl;
 
     // Allocating space on stack for local variables
-    ss << "sub esp, " << std::to_string(r_context->get_total_offset()) << std::endl;
+    ss << allocate_stack(r_context->get_total_offset_in_bytes());
 
-    // Getting arguments
     ss << "push eax" << std::endl;
-    // Moving arguments from outside of stack to corresponding index of local variable
+    // Moving arguments from outside of stack to corresponding offset of local variable
     unsigned parameter_offset_from_ebp = 0;
     for (std::list<symbol*>::iterator it = parameter_symbols->begin(); it != parameter_symbols->end(); ++it) {
+        // Increasing offset by the size of the current parameter
         parameter_offset_from_ebp += (*it)->get_size();
+        // Getting parameter register by its type
         std::string regist = get_register((*it)->symbol_type);
+        // Moving argument to current stack as local variable
         ss << "mov [ebp+" << std::to_string(parameter_offset_from_ebp) << "], " << regist << std::endl;
         ss << "mov " << regist << ", [ebp+" << std::to_string(r_context->get_variable_offset_from_ebp((*it)->name)) << "]" << std::endl;
     }
@@ -275,10 +288,11 @@ std::string function_declaration::get_code() {
     // Function body
     generate_code_of_commands(ss, r_context, r_context->get_commands());
 
+    ss << end_label << ":" << std::endl;
     // Restoring previous stack pointer
     ss << "mov esp, ebp" << std::endl;
     ss << "pop ebp" << std::endl;
-    ss << "ret 4" << std::endl;
+    ss << "ret" << std::to_string(parameter_offset_from_ebp) << std::endl;
 
     return ss.str();
 }
@@ -299,7 +313,7 @@ unsigned routine_context::get_variable_offset_from_ebp(std::string _name) const 
     return offset_from_ebp;
 }
 
-unsigned routine_context::get_total_offset() const {
+unsigned routine_context::get_total_offset_in_bytes() const {
     unsigned total_offset = 0;
     for (
         std::map<std::string, symbol*>::iterator it = symbol_table->begin(); 
@@ -309,6 +323,12 @@ unsigned routine_context::get_total_offset() const {
         total_offset += it->second->get_size();
     }
     return total_offset;
+}
+
+std::string allocate_stack(unsigned total_bytes) {
+    std::stringstream ss;
+    ss << "sub esp, " << std::to_string(total_bytes) << std::endl;
+    return ss.str();
 }
 
 void generate_code_of_commands(std::ostream& out, routine_context* context, std::list<instruction*>* commands) {
@@ -323,18 +343,25 @@ void generate_code_of_commands(std::ostream& out, routine_context* context, std:
 }
 
 void generate_code(routine_context* context) {
+    std::string exit_label = next_label();
+
     std::cout << "global main" << std::endl;
     std::cout << "extern write_natural" << std::endl;
     std::cout << "extern read_natural" << std::endl;
     std::cout << "extern write_boolean" << std::endl;
     std::cout << "extern read_boolean" << std::endl;
     std::cout << std::endl;
+
     std::cout << "section .text" << std::endl;
+
+    for (std::map<std::string, function_declaration*>::iterator it = function_table.begin(); it != function_table.end(); ++it) {
+        std::cout << it->second->get_code();
+    }
+
     std::cout << "main:" << std::endl;
-    // Allocating space on stack for local variables
-    std::cout << "sub esp, " << std::to_string(context->get_total_offset()) << std::endl;
-    // TODO whole context needs to be passed
+    std::cout << allocate_stack(context->get_total_offset_in_bytes());
     generate_code_of_commands(std::cout, context, context->get_commands());
+    std::cout << exit_label << ":" << std::endl;
     std::cout << "xor eax,eax" << std::endl;
     std::cout << "ret" << std::endl;
 }

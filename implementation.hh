@@ -270,11 +270,12 @@ class routine_context {
     ~routine_context();
     type get_variable_type(int _line, std::string _name);
     unsigned get_variable_offset_from_ebp(std::string _name) const;
-    unsigned get_total_offset() const;
+    unsigned get_total_offset_in_bytes() const;
     std::map<std::string, symbol*>* get_symbol_table();
     std::list<instruction*>* get_commands();
     type get_expected_return_type();
     void return_check();
+    std::string end_label;
   private:
     void declare_variable(symbol* _symbol);
     int line;
@@ -325,6 +326,8 @@ execution_context* current_context();
 
 // TODO ?
 void delete_commands(std::list<instruction*>* commands);
+
+std::string allocate_stack(unsigned total_bytes);
 
 void generate_code_of_commands(std::ostream& out, routine_context* context, std::list<instruction*>* commands);
 
