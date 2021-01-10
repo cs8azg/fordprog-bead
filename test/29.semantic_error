@@ -1,0 +1,17 @@
+# Default as not the last case inside switch
+program test_switch
+  natural a
+begin
+  a := 2
+  switch a
+    case 2:
+      write(2)
+      break
+    default:
+      write(42)
+      break
+    case 4:
+      write(4)
+      break
+  endswitch
+end

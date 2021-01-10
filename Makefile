@@ -15,7 +15,7 @@ clean:
 test: test_interpreter test_compiler test_lexical_errors test_syntax_errors test_semantic_errors
 
 .PHONY: test_interpreter
-test_interpreter: while exec_write_natural exec_write_boolean exec_read exec_arithmetic exec_logic exec_assignment exec_branching exec_looping exec_divisor exec_function_declaration exec_function_call
+test_interpreter: while exec_write_natural exec_write_boolean exec_read exec_arithmetic exec_logic exec_assignment exec_branching exec_looping exec_divisor exec_function_declaration exec_function_call exec_switch
 
 .PHONY: test_compiler
 test_compiler: while comp_write_natural comp_write_boolean comp_read comp_arithmetic comp_logic comp_assignment comp_branching comp_looping comp_divisor comp_function_declaration comp_function_call
@@ -42,6 +42,8 @@ test_syntax_errors: test/*.syntax_error
 	! ./while -i test/14.syntax_error 2> /dev/null
 	! ./while -i test/18.syntax_error 2> /dev/null
 	! ./while -i test/19.syntax_error 2> /dev/null
+	! ./while -i test/26.syntax_error 2> /dev/null
+	! ./while -i test/27.syntax_error 2> /dev/null
 
 
 .PHONY: test_semantic_errors
@@ -63,6 +65,9 @@ test_semantic_errors: test/*.semantic_error
 	! ./while -i test/23.semantic_error 2> /dev/null
 	! ./while -i test/24.semantic_error 2> /dev/null
 	! ./while -i test/25.semantic_error 2> /dev/null
+	! ./while -i test/28.semantic_error 2> /dev/null
+	! ./while -i test/29.semantic_error 2> /dev/null
+	! ./while -i test/30.semantic_error 2> /dev/null
 
 .PHONY: exec_write_natural
 exec_write_natural: test/test_write_natural.ok test/test_write_natural.out
@@ -206,3 +211,8 @@ comp_function_call: test/test_function_call.ok test/test_function_call.out
 	gcc temp.o io.c -otemp
 	./temp > temp.out
 	diff temp.out test/test_function_call.out
+
+.PHONY: exec_switch
+exec_switch: test/test_switch.ok test/test_switch.out
+	./while -i test/test_switch.ok > temp.out
+	diff temp.out test/test_switch.out

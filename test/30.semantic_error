@@ -1,0 +1,13 @@
+# Invalid switch-case type
+program test_switch
+  natural a
+begin
+  a := 2
+  switch a
+    case true:
+      write(true)
+      break
+    default:
+      write(false)
+  endswitch
+end

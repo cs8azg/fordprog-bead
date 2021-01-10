@@ -173,17 +173,17 @@ switch_case::switch_case(int _line, std::list<instruction*>* _body, expression* 
     : line(_line), body(_body), exp(_exp)
 {}
 
-bool switch_case::is_default_branch() {
-    return exp == nullptr;
-}
-
 switch_case::~switch_case() {
     delete exp;
     delete_commands(body);
 }
 
+bool switch_case::is_default_branch() {
+    return exp == nullptr;
+}
+
 switch_instruction::switch_instruction(int _line, expression* _exp, std::list<switch_case*>* _cases) 
-    : instruction(line), exp(_exp), cases(_cases)
+    : instruction(_line), exp(_exp), cases(_cases)
 {}
 
 switch_instruction::~switch_instruction() {

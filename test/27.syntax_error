@@ -1,0 +1,13 @@
+# No value to match on switch-case
+program test_switch
+  natural a
+begin
+  a := 2
+  switch a
+    case:
+      write(2)
+      break
+    default:
+      write(42)
+  endswitch
+end

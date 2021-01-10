@@ -211,7 +211,7 @@ execution_results for_instruction::execute() {
 }
 
 bool switch_case::matches(unsigned _value) {
-    return exp == nullptr || exp->get_value() == _value;
+    return is_default_branch() || exp->get_value() == _value;
 }
 
 execution_results switch_instruction::execute() {
@@ -220,21 +220,21 @@ execution_results switch_instruction::execute() {
     unsigned match_exp_value = exp->get_value();
     bool entered = false;
     for (
-        std::list<switch_case*>::iterator case_it = cases->begin(); 
-        case_it != cases->end();
-        ++case_it
+        std::list<switch_case*>::iterator it = cases->begin(); 
+        it != cases->end();
+        ++it
     ) {
-        if (entered && (*case_it)->is_default_branch()) {
+        if (entered && (*it)->is_default_branch()) {
             // A case has already been entered and we found the default
             break;
         }
-        if (!entered && (*case_it)->matches(match_exp_value)) {
+        if (!entered && (*it)->matches(match_exp_value)) {
             // We found a case with matching value (only evaluated if we haven't entered yet)
             entered = true;
         }
         if (entered) {
             // A case with matching value has been found before
-            execution_results results = execute_commands((*case_it)->body);
+            execution_results results = execute_commands((*it)->body);
             if (results.had_return_instruction) {
                 return results;
             }

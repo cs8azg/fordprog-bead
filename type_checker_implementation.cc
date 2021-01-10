@@ -201,8 +201,11 @@ bool switch_case::always_returns() {
 
 void switch_instruction::type_check(routine_context* _context) {
     type match_exp_type = exp->get_type(_context);
+    if (cases == nullptr || cases->size() == 0) {
+        error(line, "Switch-case must have at least one case");
+    }
     for (std::list<switch_case*>::iterator it = cases->begin(); it != cases->end(); ++it) {
-        if ((*it)->exp->get_type(_context) != match_exp_type) {
+        if (!(*it)->is_default_branch() && (*it)->exp->get_type(_context) != match_exp_type) {
             error(line, "Type of switch-case expression does not match the type of the expression to match.");
         }
         if ((*it)->is_default_branch() && (*it) != cases->back()) {

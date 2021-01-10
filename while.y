@@ -241,9 +241,9 @@ command:
 ;
 
 switch_case:
-    CAS COL expression commands
+    CAS expression COL commands
     {
-        $$ = new switch_case(@1.begin.line, $4, $3);
+        $$ = new switch_case(@1.begin.line, $4, $2);
     }
 |
     DEF COL commands

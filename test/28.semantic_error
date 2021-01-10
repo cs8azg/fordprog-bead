@@ -1,0 +1,6 @@
+# No cases inside switch
+program test_switch
+begin
+  switch 2
+  endswitch
+end

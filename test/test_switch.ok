@@ -1,0 +1,72 @@
+program test_switch
+  natural a
+  boolean b
+begin
+  a := 4
+  b := true
+
+  # Only one case is matching
+  switch a
+    case 2:
+      write(2)
+      break
+    case 4:
+      write(4)
+      break
+    default:
+      write(42)
+  endswitch
+
+  # Only default case is entered
+  switch a
+    case 2:
+      write(2)
+      break
+    default:
+      write(42)
+  endswitch
+
+  # One case is matching and there control flows into next case
+  switch a
+    case 2:
+      write(2)
+    case 4:
+      write(4)
+    case 6:
+      write(6)
+    default:
+      write(42)
+  endswitch
+
+  # No case is matching and there is no default
+  switch a
+    case 2:
+      write(2)
+      break
+    case 3:
+      write(3)
+      break
+  endswitch
+
+  # Special expression is matched/matching
+  switch a * 2 + 3
+    case a + 5:
+      write(9)
+      break
+    case 3 * a - 1:
+      write(11)
+      break
+    default:
+      write(42)
+  endswitch
+
+  # Boolean switch
+  switch b
+    case true:
+      write(true)
+      break
+    case false:
+      write(false)
+      break
+  endswitch
+end

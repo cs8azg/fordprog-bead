@@ -1,0 +1,9 @@
+# No value to match on switch
+program test_switch
+begin
+  switch
+    case 2:
+      write(2)
+      break
+  endswitch
+end
