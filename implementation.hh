@@ -239,6 +239,40 @@ class for_instruction : public instruction {
     std::list<instruction*>* body;
 };
 
+struct switch_case {
+  switch_case(int _line, std::list<instruction*>* _body);
+  switch_case(int _line, std::list<instruction*>* _body, expression* _exp);
+  ~switch_case();
+  bool always_returns();
+  bool matches(unsigned _value);
+  bool is_default_branch();
+  int line;
+  expression* exp;
+  std::list<instruction*>* body;
+};
+
+class switch_instruction : public instruction {
+  public:
+    switch_instruction(int _line, expression* _exp, std::list<switch_case*>* _cases);
+    ~switch_instruction();
+    void type_check(routine_context* _context);
+    std::string get_code(routine_context* _context);
+    execution_results execute();
+    bool always_returns();
+  private:
+    expression* exp;
+    std::list<switch_case*>* cases;
+};
+
+class break_instruction : public instruction {
+  public:
+    break_instruction(int _line);
+    void type_check(routine_context* _context);
+    std::string get_code(routine_context* _context);
+    execution_results execute();
+    bool always_returns();
+};
+
 class return_instruction : public instruction {
   public:
     return_instruction(int _line, expression* _exp);
@@ -312,6 +346,7 @@ class function_execution_context : public execution_context {
 struct execution_results {
   bool had_return_instruction;
   unsigned return_value;
+  bool had_break_instruction;
 };
 
 void declare_function(function_declaration* function);

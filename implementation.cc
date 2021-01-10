@@ -165,6 +165,37 @@ for_instruction::~for_instruction() {
     delete_commands(body);
 }
 
+switch_case::switch_case(int _line, std::list<instruction*>* _body) 
+    : line(_line), body(_body)
+{}
+
+switch_case::switch_case(int _line, std::list<instruction*>* _body, expression* _exp)
+    : line(_line), body(_body), exp(_exp)
+{}
+
+bool switch_case::is_default_branch() {
+    return exp == nullptr;
+}
+
+switch_case::~switch_case() {
+    delete exp;
+    delete_commands(body);
+}
+
+switch_instruction::switch_instruction(int _line, expression* _exp, std::list<switch_case*>* _cases) 
+    : instruction(line), exp(_exp), cases(_cases)
+{}
+
+switch_instruction::~switch_instruction() {
+    delete exp;
+    for (std::list<switch_case*>::iterator it = cases->begin(); it != cases->end(); ++it) {
+        delete *it;
+    }
+    delete cases;
+}
+
+break_instruction::break_instruction(int _line) : instruction(_line) {}
+
 return_instruction::return_instruction(int _line, expression* _exp) : instruction(_line), exp(_exp) {}
 
 return_instruction::~return_instruction() {

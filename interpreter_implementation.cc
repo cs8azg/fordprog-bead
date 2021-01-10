@@ -136,7 +136,7 @@ unsigned function_call_expression::get_value() const {
 
 execution_results assign_instruction::execute() {
     current_context()->set_variable_value(this);
-    return { false, 0 };
+    return { false, 0, false };
 }
 
 std::string assign_instruction::get_id() {
@@ -162,7 +162,7 @@ execution_results read_instruction::execute() {
             current_context()->set_variable_value(id, 0);
         }
     }
-    return { false, 0 };
+    return { false, 0, false };
 }
 
 execution_results write_instruction::execute() {
@@ -175,7 +175,7 @@ execution_results write_instruction::execute() {
             std::cout << "false" << std::endl;
         }
     }
-    return { false, 0 };
+    return { false, 0, false };
 }
 
 execution_results if_instruction::execute() {
@@ -187,54 +187,92 @@ execution_results if_instruction::execute() {
 }
 
 execution_results while_instruction::execute() {
-    execution_results results;
     while(condition->get_value()) {
-        results = execute_commands(body);
+        execution_results results = execute_commands(body);
         if (results.had_return_instruction) {
             return results;
         }
     }
-    return { false, 0 };
+    return { false, 0, false };
 }
 
 execution_results for_instruction::execute() {
-    execution_results results;
     for(
         current_context()->set_variable_value(id, from->get_value()); 
         current_context()->get_variable_value(line, id) < to->get_value(); 
         current_context()->set_variable_value(id, current_context()->get_variable_value(line, id) + 1)
     ) {
-    	results = execute_commands(body);
+    	execution_results results = execute_commands(body);
         if (results.had_return_instruction) {
             return results;
         }
     }
-    return { false, 0 };
+    return { false, 0, false };
+}
+
+bool switch_case::matches(unsigned _value) {
+    return exp == nullptr || exp->get_value() == _value;
+}
+
+execution_results switch_instruction::execute() {
+    // Enters the first case with matching value and executes all following cases until a break instruction is executed, or until the default case is found.
+    // If there is a default case and no other cases were entered prior to it, then it is entered.
+    unsigned match_exp_value = exp->get_value();
+    bool entered = false;
+    for (
+        std::list<switch_case*>::iterator case_it = cases->begin(); 
+        case_it != cases->end();
+        ++case_it
+    ) {
+        if (entered && (*case_it)->is_default_branch()) {
+            // A case has already been entered and we found the default
+            break;
+        }
+        if (!entered && (*case_it)->matches(match_exp_value)) {
+            // We found a case with matching value (only evaluated if we haven't entered yet)
+            entered = true;
+        }
+        if (entered) {
+            // A case with matching value has been found before
+            execution_results results = execute_commands((*case_it)->body);
+            if (results.had_return_instruction) {
+                return results;
+            }
+            if (results.had_break_instruction) {
+                break;
+            }
+        }
+    }
+    return { false, 0, false };
+}
+
+execution_results break_instruction::execute() {
+    return { false, 0, true };
 }
 
 execution_results return_instruction::execute() {
-    return { true, exp->get_value() };
+    return { true, exp->get_value(), false };
 }
 
 execution_results function_call_instruction::execute() {
     func_exp->get_value();
-    return { false, 0 };
+    return { false, 0, false };
 }
 
 execution_results execute_commands(std::list<instruction*>* commands) {
     if(!commands) {
-        return { false, 0 };
+        return { false, 0, false };
     }
 
     execution_results results;
     std::list<instruction*>::iterator it;
     for(it = commands->begin(); it != commands->end(); ++it) {
         results = (*it)->execute();
-        if (results.had_return_instruction) {
+        if (results.had_return_instruction || results.had_break_instruction) {
             return results;
         }
     }
-    return { false, 0 };
+    return { false, 0, false };
 }
 
 execution_context* current_context() {

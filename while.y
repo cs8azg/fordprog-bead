@@ -30,6 +30,11 @@
 %token TO
 %token DO
 %token DON
+%token SWI
+%token ESW
+%token CAS
+%token DEF
+%token BRE
 %token TRU
 %token FAL
 %token ASN
@@ -49,18 +54,25 @@
 %left MUL DIV MOD
 %precedence NOT
 
+// Common
 %type <type> type
 %type <expression*> expression
 %type <instruction*> command
 %type <std::list<instruction*>* > commands
+// Variable declaration
 %type <symbol*> variable_declaration;
 %type <std::list<symbol*>* > variable_declarations;
+// Function declaration
 %type <symbol*> parameter_declaration;
 %type <std::list<symbol*>* > parameter_declarations;
 %type <function_declaration*> function_declaration
 %type <std::list<function_declaration*>* > function_declarations
+// Function expression
 %type <function_call_expression*> function_expression
 %type <std::list<expression*>* > arguments
+// Switch case
+%type <switch_case*> switch_case
+%type <std::list<switch_case*>* > switch_cases
 
 %%
 
@@ -207,6 +219,16 @@ command:
 	    $$ = new for_instruction(@1.begin.line, $2, $4, $6, $8);
     }
 |
+    SWI expression switch_cases ESW
+    {
+        $$ = new switch_instruction(@1.begin.line, $2, $3);
+    }
+|
+    BRE
+    {
+        $$ = new break_instruction(@1.begin.line);
+    }
+|
     RET expression
     {
         $$ = new return_instruction(@1.begin.line, $2);
@@ -215,6 +237,31 @@ command:
     function_expression
     {
         $$ = new function_call_instruction(@1.begin.line, $1);
+    }
+;
+
+switch_case:
+    CAS COL expression commands
+    {
+        $$ = new switch_case(@1.begin.line, $4, $3);
+    }
+|
+    DEF COL commands
+    {
+        $$ = new switch_case(@1.begin.line, $3);
+    }
+;
+
+switch_cases:
+    // empty
+    {
+        $$ = new std::list<switch_case*>();
+    }
+|
+    switch_cases switch_case
+    {
+        $1->push_back($2);
+        $$ = $1;
     }
 ;
 

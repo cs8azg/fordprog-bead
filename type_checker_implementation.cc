@@ -190,6 +190,50 @@ bool for_instruction::always_returns() {
     return false;
 }
 
+bool switch_case::always_returns() {
+    for (std::list<instruction*>::iterator it = body->begin(); it != body->end(); ++it) {
+        if ((*it)->always_returns()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void switch_instruction::type_check(routine_context* _context) {
+    type match_exp_type = exp->get_type(_context);
+    for (std::list<switch_case*>::iterator it = cases->begin(); it != cases->end(); ++it) {
+        if ((*it)->exp->get_type(_context) != match_exp_type) {
+            error(line, "Type of switch-case expression does not match the type of the expression to match.");
+        }
+        if ((*it)->is_default_branch() && (*it) != cases->back()) {
+            error(line, "A switch can only have one default case and it must be the last one.");
+        }
+    }
+    for (std::list<switch_case*>::iterator it = cases->begin(); it != cases->end(); ++it) {
+        type_check_commands((*it)->body, _context);
+    }
+}
+
+bool switch_instruction::always_returns() {
+    // Checks whether or not all branches return and if there is a default branch
+    bool has_default_branch = false;
+    for (std::list<switch_case*>::iterator it = cases->begin(); it != cases->end(); ++it) {
+        if (!(*it)->always_returns()) {
+            return false;
+        }
+        if ((*it)->exp == nullptr) {
+            has_default_branch = true;
+        }
+    }
+    return has_default_branch;
+}
+
+void break_instruction::type_check(routine_context* _context) {}
+
+bool break_instruction::always_returns() {
+    return false;
+}
+
 void return_instruction::type_check(routine_context* _context) {
     if (exp->get_type(_context) != _context->get_expected_return_type()) {
         error(line, std::string("Return value has unexpected type"));

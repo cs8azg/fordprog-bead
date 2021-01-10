@@ -239,6 +239,14 @@ std::string for_instruction::get_code(routine_context* _context) {
     return ss.str();
 }
 
+std::string switch_instruction::get_code(routine_context* _context) {
+    return "";
+}
+
+std::string break_instruction::get_code(routine_context* _context) {
+    return "";
+}
+
 std::string function_call_instruction::get_code(routine_context* _context) {
     std::stringstream ss;
     ss << "push eax";
