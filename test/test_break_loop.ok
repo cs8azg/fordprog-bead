@@ -1,0 +1,19 @@
+program test_break_loop
+  natural a
+begin
+  a := 1
+  while a <= 10 do
+    if a > 2 then
+      break
+    endif
+    write(a)
+    a := a + 1
+  done
+
+  for a := 1 to 10 do
+    if a > 2 then
+      break
+    endif
+    write(a)
+  done
+end

@@ -189,6 +189,7 @@ std::string if_instruction::get_code(routine_context* _context) {
 std::string while_instruction::get_code(routine_context* _context) {
     std::string begin_label = next_label();
     std::string end_label = next_label();
+    _context->add_break_label(end_label);
     std::stringstream ss;
     ss << begin_label << ":" << std::endl;
     ss << condition->get_code(_context);
@@ -197,12 +198,14 @@ std::string while_instruction::get_code(routine_context* _context) {
     generate_code_of_commands(ss, _context, body);
     ss << "jmp " << begin_label << std::endl;
     ss << end_label << ":" << std::endl;
+    _context->remove_break_label();
     return ss.str();
 }
 
 std::string for_instruction::get_code(routine_context* _context) {
     std::string begin_label = next_label();
     std::string end_label = next_label();
+    _context->add_break_label(end_label);
     std::stringstream ss;
 
     unsigned offset_from_ebp = _context->get_variable_offset_from_ebp(id);
@@ -236,6 +239,7 @@ std::string for_instruction::get_code(routine_context* _context) {
 
     // End of loop
     ss << end_label << ":" << std::endl;
+    _context->remove_break_label();
     return ss.str();
 }
 

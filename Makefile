@@ -15,10 +15,10 @@ clean:
 test: test_interpreter test_compiler test_lexical_errors test_syntax_errors test_semantic_errors
 
 .PHONY: test_interpreter
-test_interpreter: while exec_write_natural exec_write_boolean exec_read exec_arithmetic exec_logic exec_assignment exec_branching exec_looping exec_divisor exec_function_declaration exec_function_call exec_switch
+test_interpreter: while exec_write_natural exec_write_boolean exec_read exec_arithmetic exec_logic exec_assignment exec_branching exec_looping exec_divisor exec_function_declaration exec_function_call exec_switch exec_loop_break
 
 .PHONY: test_compiler
-test_compiler: while comp_write_natural comp_write_boolean comp_read comp_arithmetic comp_logic comp_assignment comp_branching comp_looping comp_divisor comp_function_declaration comp_function_call comp_switch
+test_compiler: while comp_write_natural comp_write_boolean comp_read comp_arithmetic comp_logic comp_assignment comp_branching comp_looping comp_divisor comp_function_declaration comp_function_call comp_switch comp_loop_break
 
 .PHONY: test_lexical_errors
 test_lexical_errors: test/*.lexical_error
@@ -224,3 +224,16 @@ comp_switch: test/test_switch.ok test/test_switch.out
 	gcc temp.o io.c -otemp
 	./temp > temp.out
 	diff temp.out test/test_switch.out
+
+.PHONY: exec_loop_break
+exec_loop_break: test/test_break_loop.ok test/test_break_loop.out
+	./while -i test/test_break_loop.ok > temp.out
+	diff temp.out test/test_break_loop.out
+
+.PHONY: comp_loop_break
+comp_loop_break: test/test_break_loop.ok test/test_break_loop.out
+	./while -c test/test_break_loop.ok > temp.asm
+	nasm -felf temp.asm
+	gcc temp.o io.c -otemp
+	./temp > temp.out
+	diff temp.out test/test_break_loop.out

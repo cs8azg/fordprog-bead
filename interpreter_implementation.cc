@@ -192,6 +192,9 @@ execution_results while_instruction::execute() {
         if (results.had_return_instruction) {
             return results;
         }
+        if (results.had_break_instruction) {
+            break;
+        }
     }
     return { false, 0, false };
 }
@@ -205,6 +208,9 @@ execution_results for_instruction::execute() {
     	execution_results results = execute_commands(body);
         if (results.had_return_instruction) {
             return results;
+        }
+        if (results.had_break_instruction) {
+            break;
         }
     }
     return { false, 0, false };
