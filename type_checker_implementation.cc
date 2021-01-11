@@ -205,10 +205,10 @@ void switch_instruction::type_check(routine_context* _context) {
         error(line, "Switch-case must have at least one case");
     }
     for (std::list<switch_case*>::iterator it = cases->begin(); it != cases->end(); ++it) {
-        if (!(*it)->is_default_branch() && (*it)->exp->get_type(_context) != match_exp_type) {
+        if (!(*it)->is_default_case() && (*it)->exp->get_type(_context) != match_exp_type) {
             error(line, "Type of switch-case expression does not match the type of the expression to match.");
         }
-        if ((*it)->is_default_branch() && (*it) != cases->back()) {
+        if ((*it)->is_default_case() && (*it) != cases->back()) {
             error(line, "A switch can only have one default case and it must be the last one.");
         }
     }

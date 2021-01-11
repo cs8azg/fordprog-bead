@@ -245,10 +245,11 @@ struct switch_case {
   ~switch_case();
   bool always_returns();
   bool matches(unsigned _value);
-  bool is_default_branch();
+  bool is_default_case();
   int line;
   expression* exp;
   std::list<instruction*>* body;
+  std::string label;
 };
 
 class switch_instruction : public instruction {
@@ -310,6 +311,9 @@ class routine_context {
     type get_expected_return_type();
     void return_check();
     std::string end_label;
+    void add_break_label(std::string _break_label);
+    void remove_break_label();
+    std::string get_break_label();
   private:
     void declare_variable(symbol* _symbol);
     int line;
@@ -317,6 +321,7 @@ class routine_context {
     std::list<instruction*>* commands;
     bool should_return_value;
     type expected_return_type;
+    std::stack<std::string> break_labels;
 };
 
 class execution_context {

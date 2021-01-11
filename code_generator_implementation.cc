@@ -240,11 +240,51 @@ std::string for_instruction::get_code(routine_context* _context) {
 }
 
 std::string switch_instruction::get_code(routine_context* _context) {
-    return "";
+    std::stringstream ss;
+    std::string break_label = next_label();
+    _context->add_break_label(break_label);
+    type switch_type = exp->get_type(_context);
+
+    // Expression to match
+    ss << exp->get_code(_context);
+    ss << "push eax" << std::endl;
+
+    // Case matchers
+    for (std::list<switch_case*>::iterator case_it = cases->begin(); case_it != cases->end(); ++case_it) {
+        (*case_it)->label = next_label();
+        if ((*case_it)->is_default_case()) {
+            ss << "jmp " << (*case_it)->label << std::endl;
+        } else {
+            ss << (*case_it)->exp->get_code(_context);
+            ss << "cmp " << get_register(switch_type) << ", [esp]" << std::endl;
+            ss << "je " << (*case_it)->label << std::endl;
+        }
+    }
+
+    // Jump to end if no cases were matched
+    ss << "jmp " << _context->get_break_label() << std::endl;
+
+    // Case bodies
+    for (std::list<switch_case*>::iterator case_it = cases->begin(); case_it != cases->end(); ++case_it) {
+        if ((*case_it)->is_default_case()) {
+            // Jump to end if we already entered a case before and this is the default case
+            ss << "jmp " << _context->get_break_label() << std::endl;
+        }
+        ss << (*case_it)->label << ":" << std::endl;
+        generate_code_of_commands(ss, _context, (*case_it)->body);
+    }
+
+    // End of switch
+    ss << break_label << ":" << std::endl;
+    ss << "pop eax" << std::endl;
+    _context->remove_break_label();
+    return ss.str();
 }
 
 std::string break_instruction::get_code(routine_context* _context) {
-    return "";
+    std::stringstream ss;
+    ss << "jmp " << _context->get_break_label() << std::endl;
+    return ss.str();
 }
 
 std::string function_call_instruction::get_code(routine_context* _context) {
@@ -332,6 +372,18 @@ unsigned routine_context::get_total_offset_in_bytes() const {
         total_offset += it->second->get_size();
     }
     return total_offset;
+}
+
+void routine_context::add_break_label(std::string _break_label) {
+    break_labels.push(_break_label);
+}
+
+void routine_context::remove_break_label() {
+    break_labels.pop();
+}
+
+std::string routine_context::get_break_label() {
+    return break_labels.top();
 }
 
 std::string allocate_stack(unsigned total_bytes) {

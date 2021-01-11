@@ -211,7 +211,7 @@ execution_results for_instruction::execute() {
 }
 
 bool switch_case::matches(unsigned _value) {
-    return is_default_branch() || exp->get_value() == _value;
+    return is_default_case() || exp->get_value() == _value;
 }
 
 execution_results switch_instruction::execute() {
@@ -224,7 +224,7 @@ execution_results switch_instruction::execute() {
         it != cases->end();
         ++it
     ) {
-        if (entered && (*it)->is_default_branch()) {
+        if (entered && (*it)->is_default_case()) {
             // A case has already been entered and we found the default
             break;
         }

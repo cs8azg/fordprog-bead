@@ -18,7 +18,7 @@ test: test_interpreter test_compiler test_lexical_errors test_syntax_errors test
 test_interpreter: while exec_write_natural exec_write_boolean exec_read exec_arithmetic exec_logic exec_assignment exec_branching exec_looping exec_divisor exec_function_declaration exec_function_call exec_switch
 
 .PHONY: test_compiler
-test_compiler: while comp_write_natural comp_write_boolean comp_read comp_arithmetic comp_logic comp_assignment comp_branching comp_looping comp_divisor comp_function_declaration comp_function_call
+test_compiler: while comp_write_natural comp_write_boolean comp_read comp_arithmetic comp_logic comp_assignment comp_branching comp_looping comp_divisor comp_function_declaration comp_function_call comp_switch
 
 .PHONY: test_lexical_errors
 test_lexical_errors: test/*.lexical_error
@@ -215,4 +215,12 @@ comp_function_call: test/test_function_call.ok test/test_function_call.out
 .PHONY: exec_switch
 exec_switch: test/test_switch.ok test/test_switch.out
 	./while -i test/test_switch.ok > temp.out
+	diff temp.out test/test_switch.out
+
+.PHONY: comp_switch
+comp_switch: test/test_switch.ok test/test_switch.out
+	./while -c test/test_switch.ok > temp.asm
+	nasm -felf temp.asm
+	gcc temp.o io.c -otemp
+	./temp > temp.out
 	diff temp.out test/test_switch.out

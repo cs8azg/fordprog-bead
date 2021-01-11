@@ -178,7 +178,7 @@ switch_case::~switch_case() {
     delete_commands(body);
 }
 
-bool switch_case::is_default_branch() {
+bool switch_case::is_default_case() {
     return exp == nullptr;
 }
 
